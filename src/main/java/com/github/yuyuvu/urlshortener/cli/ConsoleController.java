@@ -107,10 +107,6 @@ public class ConsoleController {
     CommandHandler commandHandler = appCommands.get(commandName.toLowerCase());
     ViewModel result;
 
-    if (currentUserUUID != null) {
-      showUnreadNotifications(currentUserUUID);
-    }
-
     if (commandHandler == null) {
       result = defaultHandler.handle(new String[] {input.strip()}, this.currentUserUUID);
     } else {
@@ -122,11 +118,14 @@ public class ConsoleController {
     }
   }
 
-  private void showUnreadNotifications(UUID userUUID) {
-    List<Notification> unreadNotifications = notificationService.getUnreadNotificationsByUUID(userUUID);
-    if (!unreadNotifications.isEmpty()) {
-      presenter.present(new NotificationsViewModel(unreadNotifications));
-      notificationService.markUnreadNotificationsAsRead(unreadNotifications);
+  public void showUnreadNotifications() {
+    if (currentUserUUID != null) {
+      List<Notification> unreadNotifications =
+          notificationService.getUnreadNotificationsByUUID(currentUserUUID);
+      if (!unreadNotifications.isEmpty()) {
+        presenter.present(new NotificationsViewModel(unreadNotifications));
+        notificationService.markUnreadNotificationsAsRead(unreadNotifications);
+      }
     }
   }
 }

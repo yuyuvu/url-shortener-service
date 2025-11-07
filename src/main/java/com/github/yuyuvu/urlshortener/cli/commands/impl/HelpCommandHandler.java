@@ -4,7 +4,6 @@ import com.github.yuyuvu.urlshortener.cli.commands.CommandHandler;
 import com.github.yuyuvu.urlshortener.cli.viewmodels.ViewModel;
 import com.github.yuyuvu.urlshortener.cli.viewmodels.impl.ErrorViewModel;
 import com.github.yuyuvu.urlshortener.cli.viewmodels.impl.SuccessViewModel;
-
 import java.util.UUID;
 
 public class HelpCommandHandler implements CommandHandler {
@@ -17,7 +16,7 @@ public class HelpCommandHandler implements CommandHandler {
               + "\nВы указали избыточное количество аргументов.");
     }
     if (commandArgs.length == 1) {
-      String commandName =  commandArgs[0].toLowerCase();
+      String commandName = commandArgs[0].toLowerCase();
       switch (commandName) {
         case "list" -> {
           return new SuccessViewModel("Команда list");
@@ -34,10 +33,10 @@ public class HelpCommandHandler implements CommandHandler {
         case "delete" -> {
           return new SuccessViewModel("Команда delete");
         }
-        case "shorten"  -> {
+        case "shorten" -> {
           return new SuccessViewModel("Команда shorten");
         }
-        case "exit"  -> {
+        case "exit" -> {
           return new SuccessViewModel("Команда exit");
         }
         case "login" -> {
@@ -47,11 +46,13 @@ public class HelpCommandHandler implements CommandHandler {
           return new SuccessViewModel("Команда logout");
         }
         default -> {
-          return new ErrorViewModel("Запрошенная команда " +  commandName + " не поддерживается сервисом.");
+          return new ErrorViewModel(
+              "Запрошенная команда " + commandName + " не поддерживается сервисом.");
         }
       }
     } else {
-      return new SuccessViewModel("""
+      return new SuccessViewModel(
+          """
           Помощь по сервису сокращения ссылок:
           ...
           """);

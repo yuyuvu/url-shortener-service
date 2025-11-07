@@ -4,7 +4,6 @@ import com.github.yuyuvu.urlshortener.domain.model.Notification;
 import com.github.yuyuvu.urlshortener.domain.model.ShortLink;
 import com.github.yuyuvu.urlshortener.domain.repository.NotificationRepository;
 import com.github.yuyuvu.urlshortener.infrastructure.config.ConfigManager;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -19,11 +18,13 @@ public class NotificationService {
   }
 
   public Notification makeNewShortLinkExpiredNotification(ShortLink shortLink) {
-    return new Notification(shortLink, shortLink.getOwnerOfShortURL(), Notification.NotificationType.EXPIRED);
+    return new Notification(
+        shortLink, shortLink.getOwnerOfShortURL(), Notification.NotificationType.EXPIRED);
   }
 
   public Notification makeNewShortLinkLimitReachedNotification(ShortLink shortLink) {
-    return new Notification(shortLink, shortLink.getOwnerOfShortURL(), Notification.NotificationType.LIMIT_REACHED);
+    return new Notification(
+        shortLink, shortLink.getOwnerOfShortURL(), Notification.NotificationType.LIMIT_REACHED);
   }
 
   public void saveNewNotification(Notification notification) {

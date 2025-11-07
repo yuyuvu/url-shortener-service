@@ -28,7 +28,8 @@ public class InMemoryNotificationRepository implements NotificationRepository {
   public List<Notification> getUnreadNotificationsByUserUUID(UUID userUUID) {
     return unreadNotifications.stream()
         .filter(notification -> notification.getUserUUID().equals(userUUID))
-        .filter(notification -> !notification.isRead()).toList();
+        .filter(notification -> !notification.isRead())
+        .toList();
   }
 
   @Override

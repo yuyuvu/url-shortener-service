@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.yuyuvu.urlshortener.exceptions.UsagesLimitReachedException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.UUID;
 
 public class ShortLink {
@@ -28,7 +30,7 @@ public class ShortLink {
       @JsonProperty("usageCounter") int usageCounter,
       @JsonProperty("usageLimitAmount") int usageLimitAmount,
       @JsonProperty("ownerOfShortURL") UUID ownerOfShortURL,
-      @JsonProperty("isLimitNotified") boolean isLimitNotified) {
+      @JsonProperty("limitNotified") boolean isLimitNotified) {
     this.originalURLAddress = originalURLAddress;
     this.shortId = shortId;
     this.creationDateTime = creationDateTime;
@@ -57,7 +59,14 @@ public class ShortLink {
 
   public void incrementUsageCounter() throws UsagesLimitReachedException {
     if (isLimitReached()) {
-      throw new UsagesLimitReachedException("Лимит переходов по данной ссылке исчерпан.");
+      throw new UsagesLimitReachedException(
+          "Лимит переходов по данной ссылке исчерпан. Ей больше нельзя воспользоваться."
+              + "\nОна будет удалена в "
+              + this.getExpirationDateTime()
+                  .format(
+                      DateTimeFormatter.ofPattern("E dd.MM.uuuu HH:mm")
+                          .withLocale(Locale.forLanguageTag("ru-RU")))
+              + ".");
     }
     usageCounter++;
   }

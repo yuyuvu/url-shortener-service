@@ -10,7 +10,8 @@ public class Notification {
   private boolean isRead;
 
   public enum NotificationType {
-    EXPIRED, LIMIT_REACHED
+    EXPIRED,
+    LIMIT_REACHED
   }
 
   public Notification(ShortLink shortLink, UUID userUUID, NotificationType type) {

@@ -333,17 +333,18 @@ public class LinkService {
 
   // Методы, используемые только во внутренней логике работы сервиса
 
-  /** Метод для удаления созданной короткой ссылкой по ID во внутренней логике приложения.
-   * Используется для удаления по истечении TTL. */
+  /**
+   * Метод для удаления созданной короткой ссылкой по ID во внутренней логике приложения.
+   * Используется для удаления по истечении TTL.
+   */
   public boolean uncheckedDeleteShortLinkByShortId(String shortLinkId) {
-      return shortLinkRepository.deleteShortLink(shortLinkId);
+    return shortLinkRepository.deleteShortLink(shortLinkId);
   }
 
-  /** Метод для получения ShortLink по ShortID.
-   * Используется для удаления по TTL. */
-//  public Optional<ShortLink> uncheckedGetShortLinkByShortId(String shortLinkId) {
-//    return shortLinkRepository.getShortLinkByShortID(shortLinkId);
-//  }
+  /** Метод для получения ShortLink по ShortID. Используется для удаления по TTL. */
+  //  public Optional<ShortLink> uncheckedGetShortLinkByShortId(String shortLinkId) {
+  //    return shortLinkRepository.getShortLinkByShortID(shortLinkId);
+  //  }
 
   /** Метод для получения списка всех коротких ссылок из репозитория. */
   public List<ShortLink> listAllShortLinks() {

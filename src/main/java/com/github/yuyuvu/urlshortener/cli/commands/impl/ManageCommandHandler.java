@@ -4,11 +4,9 @@ import com.github.yuyuvu.urlshortener.application.LinkService;
 import com.github.yuyuvu.urlshortener.cli.commands.CommandHandler;
 import com.github.yuyuvu.urlshortener.cli.viewmodels.ViewModel;
 import com.github.yuyuvu.urlshortener.cli.viewmodels.impl.ErrorViewModel;
-import com.github.yuyuvu.urlshortener.cli.viewmodels.impl.StatsViewModel;
 import com.github.yuyuvu.urlshortener.cli.viewmodels.impl.SuccessViewModel;
 import com.github.yuyuvu.urlshortener.domain.model.ShortLink;
 import com.github.yuyuvu.urlshortener.exceptions.*;
-
 import java.util.UUID;
 
 public class ManageCommandHandler implements CommandHandler {
@@ -39,8 +37,7 @@ public class ManageCommandHandler implements CommandHandler {
     }
     if (!commandArgs[1].equalsIgnoreCase("set")) {
       return new ErrorViewModel(
-          "Указан неизвестный параметр после URL. "
-              + "Поддерживаемые параметры: set.");
+          "Указан неизвестный параметр после URL. " + "Поддерживаемые параметры: set.");
     }
     try {
       String shortLinkFullURL = commandArgs[0];
@@ -49,20 +46,34 @@ public class ManageCommandHandler implements CommandHandler {
         case "limit" -> {
           int newLimit = Integer.parseInt(commandArgs[3]);
           linkService.changeShortLinkUsageLimit(shortLinkFullURL, currentUserUUID, newLimit);
-          return new SuccessViewModel("Для ссылки " + shortLinkFullURL + " успешно задан новый лимит использований в " + newLimit + "!");
+          return new SuccessViewModel(
+              "Для ссылки "
+                  + shortLinkFullURL
+                  + " успешно задан новый лимит использований в "
+                  + newLimit
+                  + "!");
         }
         case "original_url" -> {
           linkService.validateURLFormat(commandArgs[3]);
           linkService.changeShortLinkOriginalURL(shortLinkFullURL, currentUserUUID, commandArgs[3]);
-          return new SuccessViewModel("Для ссылки " + shortLinkFullURL + " успешно задан новый длинный URL для перехода: " + commandArgs[3] + "!");
+          return new SuccessViewModel(
+              "Для ссылки "
+                  + shortLinkFullURL
+                  + " успешно задан новый длинный URL для перехода: "
+                  + commandArgs[3]
+                  + "!");
         }
         default -> {
-            return new ErrorViewModel(
-                "Указан неизвестный аргумент к параметру set команды manage. "
-                    + "Поддерживаемые аргументы: limit, original_url.");
+          return new ErrorViewModel(
+              "Указан неизвестный аргумент к параметру set команды manage. "
+                  + "Поддерживаемые аргументы: limit, original_url.");
         }
       }
-    } catch (OriginalLinkNotFoundException | InvalidShortLinkException | InvalidOriginalLinkException | NotEnoughPermissionsException | IllegalCommandParameterException e) {
+    } catch (OriginalLinkNotFoundException
+        | InvalidShortLinkException
+        | InvalidOriginalLinkException
+        | NotEnoughPermissionsException
+        | IllegalCommandParameterException e) {
       return new ErrorViewModel(e.getMessage());
     } catch (NumberFormatException e) {
       return new ErrorViewModel("В качестве значения для параметра set limit передано не число.");

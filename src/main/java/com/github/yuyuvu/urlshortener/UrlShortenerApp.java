@@ -10,7 +10,6 @@ import com.github.yuyuvu.urlshortener.domain.repository.UserRepository;
 import com.github.yuyuvu.urlshortener.infrastructure.config.ConfigManager;
 import com.github.yuyuvu.urlshortener.infrastructure.persistence.*;
 import com.github.yuyuvu.urlshortener.infrastructure.scheduler.LinkCleanupAndMakeNotificationsTask;
-
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -47,21 +46,27 @@ public class UrlShortenerApp {
         new ConsoleController(userService, linkService, notificationService, configManager);
 
     // TODO: Задание для Scheduler
-    try (ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor()) {
-      scheduledExecutorService.scheduleWithFixedDelay(
-          new LinkCleanupAndMakeNotificationsTask(linkService, notificationService),
-          20, 20, TimeUnit.SECONDS);
+    ScheduledExecutorService scheduledExecutorService =
+        Executors.newSingleThreadScheduledExecutor();
+    scheduledExecutorService.scheduleWithFixedDelay(
+        new LinkCleanupAndMakeNotificationsTask(
+            linkService,
+            notificationService,
+            userService,
+            consoleController::showUnreadNotifications),
+        5,
+        15,
+        TimeUnit.SECONDS);
 
-      // Добавляем автосохранение всех данных при выключении сервиса
-      Runtime.getRuntime()
-          .addShutdownHook(
-              new Thread(
-                  () -> {
-                    fileStorageService.saveStorageState(
-                        userRepository, linkRepository, notificationRepository);
-                    scheduledExecutorService.shutdown();
-                  }));
-    }
+    // Добавляем автосохранение всех данных при выключении сервиса
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  fileStorageService.saveStorageState(
+                      userRepository, linkRepository, notificationRepository);
+                  scheduledExecutorService.shutdown();
+                }));
 
     consoleController.startListening();
   }

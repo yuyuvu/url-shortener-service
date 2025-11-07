@@ -110,11 +110,16 @@ public class ConsolePresenter implements Presenter {
                 + model.shortLinks.get(0).getUsageCounter()
                 + "/"
                 + model.shortLinks.get(0).getUsageLimitAmount());
-        printlnYellow("Истекает в: " + model.shortLinks.get(0).getExpirationDateTime().format(
-            DateTimeFormatter.ofPattern("E dd.MM.uuuu HH:mm")
-                .withLocale(Locale.forLanguageTag("ru-RU"))));
         printlnYellow(
-            "Ведёт на ULR: " + model.shortLinks.get(0).getOriginalURLAddress());
+            "Истекает в: "
+                + model
+                    .shortLinks
+                    .get(0)
+                    .getExpirationDateTime()
+                    .format(
+                        DateTimeFormatter.ofPattern("E dd.MM.uuuu HH:mm")
+                            .withLocale(Locale.forLanguageTag("ru-RU"))));
+        printlnYellow("Ведёт на ULR: " + model.shortLinks.get(0).getOriginalURLAddress());
       }
     } else {
       if (model.shortLinks.isEmpty()) {
@@ -141,10 +146,46 @@ public class ConsolePresenter implements Presenter {
   }
 
   private void presentNotificationsViewModel(NotificationsViewModel model) {
-    printlnGreen("У вас есть непрочитанные уведомления: ");
+    String serviceBaseURL = configManager.getDefaultServiceBaseURLProperty();
+    printlnGreen("Внимание! У вас есть непрочитанные уведомления:");
     for (Notification notification : model.notifications) {
+      ShortLink shortLink = notification.getShortLink();
+      if (notification.getType() == Notification.NotificationType.LIMIT_REACHED) {
+        printlnCyan(
+            "Лимит использований вашей короткой ссылки "
+                + serviceBaseURL
+                + shortLink.getShortId()
+                + " на URL "
+                + shortLink.getOriginalURLAddress()
+                + " был израсходован.\nДанной короткой ссылкой воспользовались "
+                + shortLink.getUsageCounter()
+                + " раз "
+                + "(при лимите в "
+                + shortLink.getUsageLimitAmount()
+                + " использований). \nСсылка будет удалена в "
+                + shortLink
+                    .getExpirationDateTime()
+                    .format(
+                        DateTimeFormatter.ofPattern("E dd.MM.uuuu HH:mm")
+                            .withLocale(Locale.forLanguageTag("ru-RU")))
+                + ".");
+      }
       if (notification.getType() == Notification.NotificationType.EXPIRED) {
-        printlnGreen(notification.getType().name());
+        printlnCyan(
+            "Срок действия вашей короткой ссылки "
+                + serviceBaseURL
+                + shortLink.getShortId()
+                + " на URL "
+                + shortLink.getOriginalURLAddress()
+                + " истёк в "
+                + shortLink
+                    .getCreationDateTime()
+                    .format(
+                        DateTimeFormatter.ofPattern("E dd.MM.uuuu HH:mm")
+                            .withLocale(Locale.forLanguageTag("ru-RU")))
+                + ".\nДанной короткой ссылкой воспользовались "
+                + shortLink.getUsageCounter()
+                + " раз. \nСсылка была удалена из базы данных сервиса.");
       }
     }
   }
