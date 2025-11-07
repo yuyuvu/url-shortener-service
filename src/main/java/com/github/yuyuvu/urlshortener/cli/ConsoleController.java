@@ -17,8 +17,8 @@ import java.util.*;
 
 /**
  * Класс, который принимает ввод от пользователя. Парсит команды и направляет на нужный обработчик
- * команды. Принимает от обработчика реализацию ViewModel и направляет её на печать в
- * ConsolePresenter.
+ * команды. Принимает от обработчика реализацию ViewModel и направляет её на вывод в одну из
+ * реализаций интерфейса Presenter.
  */
 public class ConsoleController {
   /* Получаем текущую системную кодировку и передаём её в InputStreamReader,
@@ -60,7 +60,7 @@ public class ConsoleController {
         new ShortenCommandHandler(linkService, userService, configManager, this::loginUser));
     registerCommand("list", new ListCommandHandler(linkService));
     registerCommand("stats", new StatsCommandHandler(linkService));
-    registerCommand("manage", new ManageCommandHandler(linkService));
+    registerCommand("manage", new ManageCommandHandler(linkService, configManager));
     registerCommand("help", new HelpCommandHandler());
     registerCommand("exit", new ExitCommandHandler(presenter));
     registerCommand("delete", new DeleteCommandHandler(linkService, userService));
@@ -118,7 +118,13 @@ public class ConsoleController {
     }
   }
 
-  public void showUnreadNotifications() {
+  /**
+   * Коллбэк, вызываемый в параллельном режиме внутри LinkCheckStateTask. Проверяет, есть ли у
+   * пользователя непрочитанные уведомления, и если да, то выводит их для него. Метод полностью
+   * гарантирует сохранность уведомлений даже после выключения приложения. При авторизации
+   * пользователь сразу или в течение нескольких секунд увидит все непрочитанные уведомления.
+   */
+  public void sendUnreadNotifications() {
     if (currentUserUUID != null) {
       List<Notification> unreadNotifications =
           notificationService.getUnreadNotificationsByUUID(currentUserUUID);

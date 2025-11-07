@@ -15,6 +15,11 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
+/**
+ * LinkService отвечает за операции, совершаемые со ссылками и URL (прежде всего с объектом
+ * ShortLink). Получение, валидация, удаление, выполнение редактирующих операций. Инкапсулирует
+ * доступ к ShortLinkRepository.
+ */
 public class LinkService {
   ShortLinkRepository shortLinkRepository;
   ConfigManager configManager;
@@ -24,6 +29,10 @@ public class LinkService {
     this.configManager = configManager;
   }
 
+  /**
+   * Утилитарный класс для более наглядного разделения ссылки на её ID и service base URL (без
+   * магических индексов в массивах).
+   */
   private static class SplitShortURL {
     String serviceURL;
     String shortID;
@@ -150,8 +159,18 @@ public class LinkService {
       validateURLFormat(originalURL);
       LocalDateTime creationDateTime = LocalDateTime.now();
 
-      int ttlLimitInHours = configManager.getDefaultShortLinkTTLInHoursProperty();
-      LocalDateTime expirationDateTime = LocalDateTime.now().plusHours(ttlLimitInHours);
+      ConfigManager.TimeUnit defaultTTLTimeUnit =
+          configManager.getDefaultShortLinkTTLTimeUnitProperty();
+      int ttlLimitInTimeUnits = configManager.getDefaultShortLinkTTLInUnitsProperty();
+
+      LocalDateTime expirationDateTime;
+
+      switch (defaultTTLTimeUnit) {
+        case DAYS -> expirationDateTime = LocalDateTime.now().plusDays(ttlLimitInTimeUnits);
+        case MINUTES -> expirationDateTime = LocalDateTime.now().plusMinutes(ttlLimitInTimeUnits);
+        case SECONDS -> expirationDateTime = LocalDateTime.now().plusSeconds(ttlLimitInTimeUnits);
+        default -> expirationDateTime = LocalDateTime.now().plusHours(ttlLimitInTimeUnits);
+      }
 
       return new ShortLink(
           originalURL,
@@ -268,10 +287,17 @@ public class LinkService {
             "Нельзя задать нулевой " + "или отрицательный лимит использований ссылки.");
       }
       if (newUsageLimit <= userMaxManualSetLinkUsagesLimitAmount) {
-        // TODO: решить по поведению
+        // TODO: решить, оставить ли текущее поведение следующих двух блоков!!!
         if (shortLinkToManage.isLimitReached()) {
           throw new IllegalCommandParameterException(
-              "Нельзя менять лимит использований ссылки, если лимит уже был израсходован. Ссылка будет удалена в скором времени.");
+              "Нельзя менять лимит использований ссылки, если лимит уже был израсходован. "
+                  + "Ссылка будет удалена в скором времени либо можете удалить её вручную.");
+        }
+        if (shortLinkToManage.getUsageCounter() <= newUsageLimit) {
+          throw new IllegalCommandParameterException(
+              "Нельзя установить новый лимит использований ссылки в значение меньшее "
+                  + "или равное текущему количеству фактических использований ссылки. "
+                  + "Используйте команду удаления ссылок.");
         }
         shortLinkToManage.setUsageLimitAmount(newUsageLimit);
         return shortLinkToManage;
@@ -312,6 +338,61 @@ public class LinkService {
     }
   }
 
+  /**
+   * Метод для управления созданной короткой ссылкой: позволяет вручную изменить TTL ссылки после
+   * создания.
+   */
+  public LocalDateTime changeShortLinkTTLExpirationLimit(
+      String shortLinkFullURL, UUID userUUID, int addTTLInUnitsToCreationTime)
+      throws OriginalLinkNotFoundException,
+          InvalidShortLinkException,
+          NotEnoughPermissionsException,
+          IllegalCommandParameterException {
+    ShortLink shortLinkToManage = validateShortLinkExistence(shortLinkFullURL);
+    int userSetShortLinkMaxTTLInUnits = configManager.getUserSetShortLinkMaxTTLInUnitsProperty();
+
+    if (isUUIDOwnerOfShortLink(shortLinkToManage, userUUID)) {
+      if (userSetShortLinkMaxTTLInUnits <= 0) {
+        throw new IllegalCommandParameterException(
+            "Нельзя использовать отрицательное или нулевое значение для единиц измерения времени при установке нового TTL.");
+      }
+      if (addTTLInUnitsToCreationTime <= userSetShortLinkMaxTTLInUnits) {
+        ConfigManager.TimeUnit defaultTTLTimeUnit =
+            configManager.getDefaultShortLinkTTLTimeUnitProperty();
+        LocalDateTime newExpirationDateTime;
+        switch (defaultTTLTimeUnit) {
+          case DAYS ->
+              newExpirationDateTime = shortLinkToManage.getCreationDateTime().plusDays(addTTLInUnitsToCreationTime);
+          case MINUTES ->
+              newExpirationDateTime = shortLinkToManage.getCreationDateTime().plusMinutes(addTTLInUnitsToCreationTime);
+          case SECONDS ->
+              newExpirationDateTime = shortLinkToManage.getCreationDateTime().plusSeconds(addTTLInUnitsToCreationTime);
+          default ->
+              newExpirationDateTime = shortLinkToManage.getCreationDateTime().plusHours(addTTLInUnitsToCreationTime);
+        }
+        if (newExpirationDateTime.isBefore(LocalDateTime.now())) {
+          throw new IllegalCommandParameterException(
+              "Нельзя задать новый TTL для ссылки, при котором новый срок истечения действия ссылки уже будет истёкшим."
+                  + "\nСрок действия ссылки должен оканчиваться в будущем относительно текущего момента."
+                  + "\nОриентируйтесь на дату создания, указанную в команде list."
+                  + "\nДля удаления ссылки используйте команду delete url_вашей_короткой_ссылки.");
+        }
+        shortLinkToManage.setExpirationDateTime(newExpirationDateTime);
+        return newExpirationDateTime;
+      } else {
+        throw new IllegalCommandParameterException(
+            String.format(
+                    "Максимальное отдаление от даты создания (в единицах измерения времени: %s), ",
+                    configManager.getDefaultShortLinkTTLTimeUnitProperty().key())
+                + "которое может задавать пользователь равно: "
+                + userSetShortLinkMaxTTLInUnits + "."
+                + "\nВыберите меньшее отдаление от даты создания в единицах измерения времени.");
+      }
+    } else {
+      throw new NotEnoughPermissionsException();
+    }
+  }
+
   /** Метод для удаления созданной короткой ссылкой. */
   public boolean deleteShortLink(String shortLinkFullURL, UUID userUUID)
       throws OriginalLinkNotFoundException,
@@ -340,11 +421,6 @@ public class LinkService {
   public boolean uncheckedDeleteShortLinkByShortId(String shortLinkId) {
     return shortLinkRepository.deleteShortLink(shortLinkId);
   }
-
-  /** Метод для получения ShortLink по ShortID. Используется для удаления по TTL. */
-  //  public Optional<ShortLink> uncheckedGetShortLinkByShortId(String shortLinkId) {
-  //    return shortLinkRepository.getShortLinkByShortID(shortLinkId);
-  //  }
 
   /** Метод для получения списка всех коротких ссылок из репозитория. */
   public List<ShortLink> listAllShortLinks() {

@@ -1,5 +1,8 @@
 package com.github.yuyuvu.urlshortener.domain.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.UUID;
 
 public class Notification {
@@ -14,11 +17,16 @@ public class Notification {
     LIMIT_REACHED
   }
 
-  public Notification(ShortLink shortLink, UUID userUUID, NotificationType type) {
+  @JsonCreator
+  public Notification(
+      @JsonProperty("shortLink") ShortLink shortLink,
+      @JsonProperty("userUUID") UUID userUUID,
+      @JsonProperty("type") NotificationType type,
+      @JsonProperty("read") boolean isRead) {
     this.shortLink = shortLink;
     this.userUUID = userUUID;
     this.type = type;
-    this.isRead = false;
+    this.isRead = isRead;
   }
 
   public ShortLink getShortLink() {

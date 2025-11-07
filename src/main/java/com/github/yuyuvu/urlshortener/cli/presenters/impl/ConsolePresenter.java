@@ -179,7 +179,7 @@ public class ConsolePresenter implements Presenter {
                 + shortLink.getOriginalURLAddress()
                 + " истёк в "
                 + shortLink
-                    .getCreationDateTime()
+                    .getExpirationDateTime()
                     .format(
                         DateTimeFormatter.ofPattern("E dd.MM.uuuu HH:mm")
                             .withLocale(Locale.forLanguageTag("ru-RU")))

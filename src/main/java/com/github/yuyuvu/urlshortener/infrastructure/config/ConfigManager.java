@@ -29,7 +29,9 @@ public class ConfigManager {
 
   /** Перечисление возможных настроек приложения с мэппингом на ключи в файле конфигурации. */
   enum ConfigProperty {
-    DEFAULT_LINK_TTL_HOURS("default.link.ttl.hours"),
+    DEFAULT_LINK_TTL_UNITS("default.link.ttl.units"),
+    USER_SET_LINK_MAX_TTL_UNITS("user.set.link.max.ttl.units"),
+    DEFAULT_LINK_TTL_TIME_UNIT("default.link.ttl.time.unit"),
     DEFAULT_LINK_USAGE_LIMIT("default.link.usage.limit"),
     USER_LINK_USAGE_LIMIT("user.link.usage.limit"),
     DEFAULT_SHORT_LINK_LENGTH("default.short.link.length"),
@@ -50,11 +52,43 @@ public class ConfigManager {
     }
   }
 
+  public enum TimeUnit {
+    HOURS("часы"),
+    MINUTES("минуты"),
+    SECONDS("секунды"),
+    DAYS("дни");
+
+    private final String key;
+
+    TimeUnit(String key) {
+      this.key = key;
+    }
+
+    public String key() {
+      return key;
+    }
+
+    static TimeUnit getTimeUnit(String value) {
+      for (TimeUnit timeUnit : TimeUnit.values()) {
+        if (timeUnit.key.equals(value)) return timeUnit;
+      }
+      throw new IllegalArgumentException(value);
+    }
+  }
+
   private Properties makeDefaultProperties() {
     Properties defaultProperties = new Properties();
     // Значения по умолчанию, которые записываются в файл конфигурации в первый раз
-    // Время жизни короткой ссылки в часах
-    defaultProperties.setProperty(ConfigProperty.DEFAULT_LINK_TTL_HOURS.key(), "24");
+
+    // Время жизни короткой ссылки в единицах измерения времени (стандартно в часах, также возможны
+    // дни, минуты, секунды)
+    defaultProperties.setProperty(ConfigProperty.DEFAULT_LINK_TTL_UNITS.key(), "24");
+
+    // Максимальное время жизни ссылки, на которое пользователь может изменить стандартное значение
+    defaultProperties.setProperty(ConfigProperty.USER_SET_LINK_MAX_TTL_UNITS.key(), "72");
+
+    // Единица времени для установки TTL
+    defaultProperties.setProperty(ConfigProperty.DEFAULT_LINK_TTL_TIME_UNIT.key(), "секунды");
 
     // Максимум использований одной короткой ссылки - 10
     defaultProperties.setProperty(ConfigProperty.DEFAULT_LINK_USAGE_LIMIT.key(), "10");
@@ -172,8 +206,8 @@ public class ConfigManager {
     }
   }
 
-  public int getDefaultShortLinkTTLInHoursProperty() {
-    String configKey = ConfigProperty.DEFAULT_LINK_TTL_HOURS.key();
+  public int getDefaultShortLinkTTLInUnitsProperty() {
+    String configKey = ConfigProperty.DEFAULT_LINK_TTL_UNITS.key();
     String defaultValue = defaultProperties.getProperty(configKey);
     String configValue = appProperties.getProperty(configKey);
     try {
@@ -183,11 +217,49 @@ public class ConfigManager {
           "В файле конфигурации обнаружено некорректное время действия ссылки по-умолчанию: "
               + configValue
               + ".\n"
-              + "Укажите значение в часах в формате 24, 5, 1 и т.д.\n"
+              + "Укажите значение в формате 24, 5, 1 и т.д. См. параметр time.unit для выбора единицы измерения TTL.\n"
               + "На время текущего запуска сервиса будет установлено стандартное значение: "
               + defaultValue);
       appProperties.setProperty(configKey, defaultValue);
       return Integer.parseInt(appProperties.getProperty(configKey));
+    }
+  }
+
+  public int getUserSetShortLinkMaxTTLInUnitsProperty() {
+    String configKey = ConfigProperty.USER_SET_LINK_MAX_TTL_UNITS.key();
+    String defaultValue = defaultProperties.getProperty(configKey);
+    String configValue = appProperties.getProperty(configKey);
+    try {
+      return Integer.parseInt(configValue);
+    } catch (NumberFormatException e) {
+      printlnRed(
+          "В файле конфигурации обнаружен некорректный лимит TTL, на который пользователь может замениться стандартное время действия ссылки: "
+              + configValue
+              + ".\n"
+              + "Укажите значение в формате 24, 5, 1 и т.д. См. параметр time.unit для выбора единицы измерения TTL.\n"
+              + "На время текущего запуска сервиса будет установлено стандартное значение: "
+              + defaultValue);
+      appProperties.setProperty(configKey, defaultValue);
+      return Integer.parseInt(appProperties.getProperty(configKey));
+    }
+  }
+
+  public TimeUnit getDefaultShortLinkTTLTimeUnitProperty() {
+    String configKey = ConfigProperty.DEFAULT_LINK_TTL_TIME_UNIT.key();
+    String defaultValue = defaultProperties.getProperty(configKey);
+    String configValue = appProperties.getProperty(configKey);
+    try {
+      return TimeUnit.getTimeUnit(configValue);
+    } catch (IllegalArgumentException e) {
+      printlnRed(
+          "В файле конфигурации обнаружено некорректное значение единицы измерения TTL для расчётов время действия ссылки: "
+              + configValue
+              + ".\n"
+              + "Допустимые значения параметра: часы, минуты, секунды или дни.\n"
+              + "На время текущего запуска сервиса будет установлено стандартное значение: "
+              + defaultValue);
+      appProperties.setProperty(configKey, defaultValue);
+      return TimeUnit.getTimeUnit(appProperties.getProperty(configKey));
     }
   }
 

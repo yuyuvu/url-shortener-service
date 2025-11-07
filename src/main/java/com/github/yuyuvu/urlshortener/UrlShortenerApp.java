@@ -9,7 +9,7 @@ import com.github.yuyuvu.urlshortener.domain.repository.ShortLinkRepository;
 import com.github.yuyuvu.urlshortener.domain.repository.UserRepository;
 import com.github.yuyuvu.urlshortener.infrastructure.config.ConfigManager;
 import com.github.yuyuvu.urlshortener.infrastructure.persistence.*;
-import com.github.yuyuvu.urlshortener.infrastructure.scheduler.LinkCleanupAndMakeNotificationsTask;
+import com.github.yuyuvu.urlshortener.infrastructure.scheduler.LinkCheckStateTask;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -49,11 +49,11 @@ public class UrlShortenerApp {
     ScheduledExecutorService scheduledExecutorService =
         Executors.newSingleThreadScheduledExecutor();
     scheduledExecutorService.scheduleWithFixedDelay(
-        new LinkCleanupAndMakeNotificationsTask(
+        new LinkCheckStateTask(
             linkService,
             notificationService,
             userService,
-            consoleController::showUnreadNotifications),
+            consoleController::sendUnreadNotifications),
         5,
         15,
         TimeUnit.SECONDS);

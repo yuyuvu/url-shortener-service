@@ -19,12 +19,12 @@ public class NotificationService {
 
   public Notification makeNewShortLinkExpiredNotification(ShortLink shortLink) {
     return new Notification(
-        shortLink, shortLink.getOwnerOfShortURL(), Notification.NotificationType.EXPIRED);
+        shortLink, shortLink.getOwnerOfShortURL(), Notification.NotificationType.EXPIRED, false);
   }
 
   public Notification makeNewShortLinkLimitReachedNotification(ShortLink shortLink) {
     return new Notification(
-        shortLink, shortLink.getOwnerOfShortURL(), Notification.NotificationType.LIMIT_REACHED);
+        shortLink, shortLink.getOwnerOfShortURL(), Notification.NotificationType.LIMIT_REACHED, false);
   }
 
   public void saveNewNotification(Notification notification) {

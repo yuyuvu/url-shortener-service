@@ -15,7 +15,7 @@ public class InMemoryNotificationRepository implements NotificationRepository {
 
   @Override
   public List<Notification> getRepositoryAsList() {
-    return unreadNotifications;
+    return new ArrayList<>(unreadNotifications);
   }
 
   @Override
