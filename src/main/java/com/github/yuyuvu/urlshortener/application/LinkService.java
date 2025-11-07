@@ -160,7 +160,8 @@ public class LinkService {
           expirationDateTime,
           0,
           configManager.getDefaultShortLinkUsageLimitProperty(),
-          ownerOfShortLink);
+          ownerOfShortLink,
+          false);
     } catch (InvalidOriginalLinkException e) {
       throw new InvalidOriginalLinkException(e.getMessage());
     }
@@ -328,5 +329,24 @@ public class LinkService {
   /** Метод для получения списка созданных коротких ссылок пользователя. */
   public List<ShortLink> listShortLinksByUUID(UUID userUUID) {
     return shortLinkRepository.getShortLinksByOwnerUUID(userUUID);
+  }
+
+  // Методы, используемые только во внутренней логике работы сервиса
+
+  /** Метод для удаления созданной короткой ссылкой по ID во внутренней логике приложения.
+   * Используется для удаления по истечении TTL. */
+  public boolean uncheckedDeleteShortLinkByShortId(String shortLinkId) {
+      return shortLinkRepository.deleteShortLink(shortLinkId);
+  }
+
+  /** Метод для получения ShortLink по ShortID.
+   * Используется для удаления по TTL. */
+//  public Optional<ShortLink> uncheckedGetShortLinkByShortId(String shortLinkId) {
+//    return shortLinkRepository.getShortLinkByShortID(shortLinkId);
+//  }
+
+  /** Метод для получения списка всех коротких ссылок из репозитория. */
+  public List<ShortLink> listAllShortLinks() {
+    return shortLinkRepository.getAllShortLinks();
   }
 }

@@ -7,16 +7,17 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class ShortLink {
-  UUID ownerOfShortURL;
+  private final UUID ownerOfShortURL;
 
   private String originalURLAddress;
   private String shortId;
 
-  private LocalDateTime creationDateTime;
+  private final LocalDateTime creationDateTime;
   private LocalDateTime expirationDateTime;
 
   private int usageCounter;
   private int usageLimitAmount;
+  private boolean isLimitNotified;
 
   @JsonCreator
   public ShortLink(
@@ -26,7 +27,8 @@ public class ShortLink {
       @JsonProperty("expirationDateTime") LocalDateTime expirationDateTime,
       @JsonProperty("usageCounter") int usageCounter,
       @JsonProperty("usageLimitAmount") int usageLimitAmount,
-      @JsonProperty("ownerOfShortURL") UUID ownerOfShortURL) {
+      @JsonProperty("ownerOfShortURL") UUID ownerOfShortURL,
+      @JsonProperty("isLimitNotified") boolean isLimitNotified) {
     this.originalURLAddress = originalURLAddress;
     this.shortId = shortId;
     this.creationDateTime = creationDateTime;
@@ -34,10 +36,23 @@ public class ShortLink {
     this.usageCounter = usageCounter;
     this.usageLimitAmount = usageLimitAmount;
     this.ownerOfShortURL = ownerOfShortURL;
+    this.isLimitNotified = isLimitNotified;
+  }
+
+  public boolean isExpired() {
+    return this.expirationDateTime.isBefore(LocalDateTime.now());
   }
 
   public boolean isLimitReached() {
     return usageCounter >= usageLimitAmount;
+  }
+
+  public boolean isLimitNotified() {
+    return isLimitNotified;
+  }
+
+  public void setLimitNotified(boolean isLimitNotified) {
+    this.isLimitNotified = isLimitNotified;
   }
 
   public void incrementUsageCounter() throws UsagesLimitReachedException {
@@ -67,10 +82,6 @@ public class ShortLink {
     return creationDateTime;
   }
 
-  public void setCreationDateTime(LocalDateTime creationDateTime) {
-    this.creationDateTime = creationDateTime;
-  }
-
   public LocalDateTime getExpirationDateTime() {
     return expirationDateTime;
   }
@@ -91,15 +102,7 @@ public class ShortLink {
     return usageCounter;
   }
 
-  public void setUsageCounter(int usageCounter) {
-    this.usageCounter = usageCounter;
-  }
-
   public UUID getOwnerOfShortURL() {
     return ownerOfShortURL;
-  }
-
-  public void setOwnerOfShortURL(UUID ownerOfShortURL) {
-    this.ownerOfShortURL = ownerOfShortURL;
   }
 }

@@ -8,6 +8,8 @@ import com.github.yuyuvu.urlshortener.cli.commands.impl.*;
 import com.github.yuyuvu.urlshortener.cli.presenters.Presenter;
 import com.github.yuyuvu.urlshortener.cli.presenters.impl.ConsolePresenter;
 import com.github.yuyuvu.urlshortener.cli.viewmodels.ViewModel;
+import com.github.yuyuvu.urlshortener.cli.viewmodels.impl.NotificationsViewModel;
+import com.github.yuyuvu.urlshortener.domain.model.Notification;
 import com.github.yuyuvu.urlshortener.infrastructure.config.ConfigManager;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
@@ -105,6 +107,10 @@ public class ConsoleController {
     CommandHandler commandHandler = appCommands.get(commandName.toLowerCase());
     ViewModel result;
 
+    if (currentUserUUID != null) {
+      showUnreadNotifications(currentUserUUID);
+    }
+
     if (commandHandler == null) {
       result = defaultHandler.handle(new String[] {input.strip()}, this.currentUserUUID);
     } else {
@@ -113,6 +119,14 @@ public class ConsoleController {
 
     if (result != null) {
       presenter.present(result);
+    }
+  }
+
+  private void showUnreadNotifications(UUID userUUID) {
+    List<Notification> unreadNotifications = notificationService.getUnreadNotificationsByUUID(userUUID);
+    if (!unreadNotifications.isEmpty()) {
+      presenter.present(new NotificationsViewModel(unreadNotifications));
+      notificationService.markUnreadNotificationsAsRead(unreadNotifications);
     }
   }
 }

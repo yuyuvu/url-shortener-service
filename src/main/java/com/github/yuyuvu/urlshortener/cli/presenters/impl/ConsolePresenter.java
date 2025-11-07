@@ -5,6 +5,7 @@ import static com.github.yuyuvu.urlshortener.cli.presenters.ColorPrinter.*;
 import com.github.yuyuvu.urlshortener.cli.presenters.Presenter;
 import com.github.yuyuvu.urlshortener.cli.viewmodels.ViewModel;
 import com.github.yuyuvu.urlshortener.cli.viewmodels.impl.*;
+import com.github.yuyuvu.urlshortener.domain.model.Notification;
 import com.github.yuyuvu.urlshortener.domain.model.ShortLink;
 import com.github.yuyuvu.urlshortener.infrastructure.config.ConfigManager;
 import java.time.format.DateTimeFormatter;
@@ -31,6 +32,8 @@ public class ConsolePresenter implements Presenter {
       presentListViewModel(model);
     } else if (result instanceof StatsViewModel model) {
       presentStatsViewModel(model);
+    } else if (result instanceof NotificationsViewModel model) {
+      presentNotificationsViewModel(model);
     }
   }
 
@@ -133,6 +136,15 @@ public class ConsolePresenter implements Presenter {
                   + shortLink.getUsageLimitAmount()
                   + ".");
         }
+      }
+    }
+  }
+
+  private void presentNotificationsViewModel(NotificationsViewModel model) {
+    printlnGreen("У вас есть непрочитанные уведомления: ");
+    for (Notification notification : model.notifications) {
+      if (notification.getType() == Notification.NotificationType.EXPIRED) {
+        printlnGreen(notification.getType().name());
       }
     }
   }
