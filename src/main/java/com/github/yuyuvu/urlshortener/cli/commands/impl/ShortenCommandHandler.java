@@ -10,7 +10,6 @@ import com.github.yuyuvu.urlshortener.domain.model.ShortLink;
 import com.github.yuyuvu.urlshortener.domain.model.User;
 import com.github.yuyuvu.urlshortener.exceptions.InvalidOriginalLinkException;
 import com.github.yuyuvu.urlshortener.infrastructure.config.ConfigManager;
-
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -20,7 +19,11 @@ public class ShortenCommandHandler implements CommandHandler {
   ConfigManager configManager;
   Consumer<UUID> onNewUserCreationDo;
 
-  public ShortenCommandHandler(LinkService linkService, UserService userService, ConfigManager configManager, Consumer<UUID> onNewUserCreationDo) {
+  public ShortenCommandHandler(
+      LinkService linkService,
+      UserService userService,
+      ConfigManager configManager,
+      Consumer<UUID> onNewUserCreationDo) {
     this.linkService = linkService;
     this.userService = userService;
     this.configManager = configManager;
@@ -50,7 +53,8 @@ public class ShortenCommandHandler implements CommandHandler {
 
         int linksPerUserLimit = configManager.getDefaultShortLinkMaxAmountPerUserProperty();
         if (user.getAmountOfMadeShortLinks() >= linksPerUserLimit) {
-          return new ErrorViewModel("Вы достигли максимального количества созданных коротких ссылок на одного пользователя. Удалите или измените старые ссылки.");
+          return new ErrorViewModel(
+              "Вы достигли максимального количества созданных коротких ссылок на одного пользователя. Удалите или измените старые ссылки.");
         } else {
           user.incrementAmountOfMadeShortLinks();
 
@@ -62,8 +66,7 @@ public class ShortenCommandHandler implements CommandHandler {
           linkService.saveNewShortLink(shortLink);
           String serviceBaseURL = configManager.getDefaultServiceBaseURLProperty();
           return new CreatedLinkViewModel(
-              user.getUUID(), serviceBaseURL+shortLink.getShortId(),
-              isNewUser, originalURL);
+              user.getUUID(), serviceBaseURL + shortLink.getShortId(), isNewUser, originalURL);
         }
       } catch (InvalidOriginalLinkException e) {
         return new ErrorViewModel(e.getMessage());
@@ -71,4 +74,3 @@ public class ShortenCommandHandler implements CommandHandler {
     }
   }
 }
-

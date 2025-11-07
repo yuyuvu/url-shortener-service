@@ -9,7 +9,6 @@ import com.github.yuyuvu.urlshortener.cli.viewmodels.impl.SuccessViewModel;
 import com.github.yuyuvu.urlshortener.exceptions.InvalidShortLinkException;
 import com.github.yuyuvu.urlshortener.exceptions.NotEnoughPermissionsException;
 import com.github.yuyuvu.urlshortener.exceptions.OriginalLinkNotFoundException;
-
 import java.util.UUID;
 
 public class DeleteCommandHandler implements CommandHandler {
@@ -29,8 +28,9 @@ public class DeleteCommandHandler implements CommandHandler {
               + "\nВы указали недостаточное или избыточное количество аргументов.");
     }
     if (currentUserUUID == null) {
-      return new ErrorViewModel("Нельзя использовать удаление ссылки без предварительной идентификации по UUID. "
-          + "Используйте login ваш_UUID");
+      return new ErrorViewModel(
+          "Нельзя использовать удаление ссылки без предварительной идентификации по UUID. "
+              + "Используйте команду: login ваш_UUID");
     }
     try {
       if (linkService.deleteShortLink(commandArgs[0], currentUserUUID)) {
@@ -39,9 +39,12 @@ public class DeleteCommandHandler implements CommandHandler {
         }
         return new SuccessViewModel("Вы успешно удалили короткую ссылку: " + commandArgs[0]);
       } else {
-        return new ErrorViewModel("Возникла непредвиденная ошибка при попытке удаления ссылки: " + commandArgs[0]);
+        return new ErrorViewModel(
+            "Возникла непредвиденная ошибка при попытке удаления ссылки: " + commandArgs[0]);
       }
-    } catch (OriginalLinkNotFoundException | InvalidShortLinkException | NotEnoughPermissionsException e) {
+    } catch (OriginalLinkNotFoundException
+        | InvalidShortLinkException
+        | NotEnoughPermissionsException e) {
       return new ErrorViewModel(e.getMessage());
     }
   }

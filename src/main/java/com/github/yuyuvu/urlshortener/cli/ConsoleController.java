@@ -9,7 +9,6 @@ import com.github.yuyuvu.urlshortener.cli.presenters.Presenter;
 import com.github.yuyuvu.urlshortener.cli.presenters.impl.ConsolePresenter;
 import com.github.yuyuvu.urlshortener.cli.viewmodels.ViewModel;
 import com.github.yuyuvu.urlshortener.infrastructure.config.ConfigManager;
-
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.*;
@@ -41,7 +40,10 @@ public class ConsoleController {
   private UUID currentUserUUID = null;
 
   public ConsoleController(
-      UserService userService, LinkService linkService, NotificationService notificationService, ConfigManager configManager) {
+      UserService userService,
+      LinkService linkService,
+      NotificationService notificationService,
+      ConfigManager configManager) {
     this.userService = userService;
     this.linkService = linkService;
     this.notificationService = notificationService;
@@ -51,10 +53,12 @@ public class ConsoleController {
 
     registerCommand("login", new LoginCommandHandler(userService, this::loginUser));
     registerCommand("logout", new LogoutCommandHandler(this::logoutUser));
-    registerCommand("shorten", new ShortenCommandHandler(linkService, userService, configManager, this::loginUser));
+    registerCommand(
+        "shorten",
+        new ShortenCommandHandler(linkService, userService, configManager, this::loginUser));
     registerCommand("list", new ListCommandHandler(linkService));
-    registerCommand("stats", new StatsCommandHandler());
-    registerCommand("manage", new ManageCommandHandler());
+    registerCommand("stats", new StatsCommandHandler(linkService));
+    registerCommand("manage", new ManageCommandHandler(linkService));
     registerCommand("help", new HelpCommandHandler());
     registerCommand("exit", new ExitCommandHandler(presenter));
     registerCommand("delete", new DeleteCommandHandler(linkService, userService));
@@ -83,7 +87,8 @@ public class ConsoleController {
     presenter.sendMessage("Проект выполнил Мордашев Юрий Вячеславович.");
     presenter.sendMessage("Сервис сокращения ссылок запущен!");
     presenter.sendMessage("Для получения помощи по сервису введите help.");
-    presenter.sendMessage("Без явного указания какой-либо команды сервис воспринимает ввод как короткий URL для перехода.");
+    presenter.sendMessage(
+        "Без явного указания какой-либо команды сервис воспринимает ввод как короткий URL для перехода.");
 
     while (true) {
       String currentInput = userInput.nextLine();
@@ -101,7 +106,7 @@ public class ConsoleController {
     ViewModel result;
 
     if (commandHandler == null) {
-      result = defaultHandler.handle(new String[]{input.strip()}, this.currentUserUUID);
+      result = defaultHandler.handle(new String[] {input.strip()}, this.currentUserUUID);
     } else {
       result = commandHandler.handle(commandArgs, this.currentUserUUID);
     }

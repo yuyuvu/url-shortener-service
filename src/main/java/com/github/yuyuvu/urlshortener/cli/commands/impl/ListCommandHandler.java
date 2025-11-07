@@ -17,9 +17,10 @@ public class ListCommandHandler implements CommandHandler {
   @Override
   public ViewModel handle(String[] commandArgs, UUID currentUserUUID) {
     if (currentUserUUID == null) {
-      return new ErrorViewModel("Нельзя просматривать свои ссылки без предварительной идентификации по UUID. "
-          + "Используйте login ваш_UUID");
+      return new ErrorViewModel(
+          "Нельзя просматривать список созданных ссылок без предварительной идентификации по UUID. "
+              + "Используйте команду: login ваш_UUID");
     }
-    return new ListViewModel(linkService.listShortLinks(currentUserUUID));
+    return new ListViewModel(linkService.listShortLinksByUUID(currentUserUUID));
   }
 }

@@ -2,7 +2,6 @@ package com.github.yuyuvu.urlshortener.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.UUID;
 
 public class User {
@@ -11,8 +10,9 @@ public class User {
   private int amountOfMadeShortLinks;
 
   @JsonCreator
-  public User(@JsonProperty("uuid") UUID uuid,
-              @JsonProperty("amountOfMadeShortLinks") int amountOfMadeShortLinks) {
+  public User(
+      @JsonProperty("uuid") UUID uuid,
+      @JsonProperty("amountOfMadeShortLinks") int amountOfMadeShortLinks) {
     this.uuid = uuid;
     this.amountOfMadeShortLinks = amountOfMadeShortLinks;
   }

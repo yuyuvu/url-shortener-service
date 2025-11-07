@@ -1,7 +1,6 @@
 package com.github.yuyuvu.urlshortener.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.yuyuvu.urlshortener.exceptions.UsagesLimitReachedException;
 import java.time.LocalDateTime;

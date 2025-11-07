@@ -3,7 +3,6 @@ package com.github.yuyuvu.urlshortener.application;
 import com.github.yuyuvu.urlshortener.domain.model.User;
 import com.github.yuyuvu.urlshortener.domain.repository.UserRepository;
 import com.github.yuyuvu.urlshortener.infrastructure.config.ConfigManager;
-
 import java.util.Optional;
 import java.util.UUID;
 
