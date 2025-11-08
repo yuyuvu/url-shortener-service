@@ -5,13 +5,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.UUID;
 
 /**
- * User представляет собой UUID с некоторыми дополнительными связанными с ним свойствами
- * (например, количество созданных им ссылок). Введение User позволяет в дальнейшем расширять
- * логику работы с UUID.
+ * User представляет собой UUID с некоторыми дополнительными связанными с ним свойствами (например,
+ * количество созданных им ссылок). Введение User позволяет в дальнейшем расширять логику работы с
+ * UUID.
  */
 public class User {
   /** UUID пользователя. */
-  private UUID uuid;
+  private final UUID uuid;
 
   /** Количество созданных пользователем с определённым UUID ссылок. */
   private int amountOfMadeShortLinks;
@@ -39,14 +39,12 @@ public class User {
     this.amountOfMadeShortLinks = this.amountOfMadeShortLinks - 1;
   }
 
-  // Геттеры и сеттеры
+  /*
+   * Геттеры и сеттеры
+   * */
 
   public UUID getUUID() {
     return uuid;
-  }
-
-  public void setUUID(UUID uuid) {
-    this.uuid = uuid;
   }
 
   public int getAmountOfMadeShortLinks() {

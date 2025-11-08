@@ -4,16 +4,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.github.yuyuvu.urlshortener.domain.model.Notification;
 import com.github.yuyuvu.urlshortener.domain.model.ShortLink;
 import com.github.yuyuvu.urlshortener.domain.model.User;
-import java.util.Map;
-import java.util.List;
-import java.util.UUID;
-import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Промежуточный объект состояния, в который собираются или из которого получаются все данные
  * сервиса перед сохранением из внешнего постоянного хранилища или перед записью в него.
- * */
+ */
 public class StorageState {
   private Map<String, ShortLink> existingShortLinks;
   private Map<UUID, User> existingUsers;

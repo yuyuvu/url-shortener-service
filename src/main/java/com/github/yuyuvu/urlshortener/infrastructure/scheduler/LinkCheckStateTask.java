@@ -8,17 +8,23 @@ import com.github.yuyuvu.urlshortener.domain.model.ShortLink;
 import java.util.List;
 
 /**
- * Класс представляет задание, которое периодически выполняется в параллельном режиме
- * и включает в себя: проверку истечения срока действия коротких ссылок и их удаление,
- * отправку уведомлений, если был израсходован лимит использований или срок действия ссылки истёк,
- * а также очищение списка уже прочитанных уведомлений.
+ * Класс представляет задание, которое периодически выполняется в параллельном режиме и включает в
+ * себя: проверку истечения срока действия коротких ссылок и их удаление, отправку уведомлений, если
+ * был израсходован лимит использований или срок действия ссылки истёк, а также очищение списка уже
+ * прочитанных уведомлений.
  */
 public class LinkCheckStateTask implements Runnable {
-  LinkService linkService;
-  NotificationService notificationService;
-  UserService userService;
-  Runnable showNotificationsTask;
+  private final LinkService linkService;
+  private final NotificationService notificationService;
+  private final UserService userService;
+  private final Runnable showNotificationsTask;
 
+  /**
+   * Конструктор для создания задания, которое периодически выполняется в параллельном режиме и
+   * включает в себя: проверку истечения срока действия коротких ссылок и их удаление, отправку
+   * уведомлений, если был израсходован лимит использований или срок действия ссылки истёк, а также
+   * очищение списка уже прочитанных уведомлений.
+   */
   public LinkCheckStateTask(
       LinkService linkService,
       NotificationService notificationService,
@@ -36,6 +42,7 @@ public class LinkCheckStateTask implements Runnable {
    * а также очищение списка уже прочитанных уведомлений.
    */
   @Override
+  @SuppressWarnings("CallToPrintStackTrace")
   public void run() {
     try {
       // Получаем все короткие ссылки сервиса

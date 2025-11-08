@@ -15,11 +15,11 @@ import java.util.Properties;
  */
 public class ConfigManager {
   /** Основная папка с данными приложения и файлом настройки, не изменяется. */
-  private final Path PATH_TO_APPDATA_DIRECTORY = Path.of("url_shortener_appdata");
+  private final Path pathToAppdataDirectory = Path.of("url_shortener_appdata");
 
   /** Файл настройки приложения, не изменяется. */
-  private final Path PATH_TO_CONFIG_FILE =
-      PATH_TO_APPDATA_DIRECTORY.resolve("url_shortener_config.properties");
+  private final Path pathToConfigFile =
+      pathToAppdataDirectory.resolve("url_shortener_config.properties");
 
   /** Поле с загруженными настройками приложения. */
   private Properties appProperties;
@@ -53,8 +53,8 @@ public class ConfigManager {
   }
 
   /**
-   * Перечисление возможных единиц измерения времени, через которые может задаваться TTL
-   *  для коротких ссылок.
+   * Перечисление возможных единиц измерения времени, через которые может задаваться TTL для
+   * коротких ссылок.
    */
   public enum TimeUnit {
     HOURS("часы"),
@@ -68,6 +68,7 @@ public class ConfigManager {
       this.key = key;
     }
 
+    /** Метод для получения строкового представления константы TimeUnit. */
     public String key() {
       return key;
     }
@@ -76,15 +77,17 @@ public class ConfigManager {
     // выбрасывание ошибки в случае некорректного ключа
     static TimeUnit getTimeUnit(String value) {
       for (TimeUnit timeUnit : TimeUnit.values()) {
-        if (timeUnit.key.equals(value)) return timeUnit;
+        if (timeUnit.key.equals(value)) {
+          return timeUnit;
+        }
       }
       throw new IllegalArgumentException(value);
     }
   }
 
   /**
-   * Метод задаёт стандартные настройки приложения, которые используются если файла настроек нет
-   * или в нём заданы не все настройки (в таком случае отсюда берутся незаданные).
+   * Метод задаёт стандартные настройки приложения, которые используются если файла настроек нет или
+   * в нём заданы не все настройки (в таком случае отсюда берутся незаданные).
    */
   private Properties makeDefaultProperties() {
     Properties defaultProperties = new Properties();
@@ -142,18 +145,26 @@ public class ConfigManager {
   }
 
   /**
-   * Конструктор загружает настройки из файла конфигурации, отсутствующие
-   * в файле настройки задаёт по умолчанию.
-   * */
+   * Конструктор загружает настройки из файла конфигурации, отсутствующие в файле настройки задаёт
+   * по умолчанию. Используется для первого и единственного создания объекта ConfigManager.
+   */
   public ConfigManager() {
+    reloadConfig();
+  }
+
+  /**
+   * Метод перезагружает настройки из файла конфигурации, отсутствующие в файле настройки задаёт по
+   * умолчанию.
+   */
+  private void reloadConfig() {
     // Создание директории для файлов данных сервиса
     try {
-      Files.createDirectories(PATH_TO_APPDATA_DIRECTORY);
+      Files.createDirectories(pathToAppdataDirectory);
     } catch (IOException e) {
       appProperties = makeDefaultProperties();
       printlnRed(
           "Проблемы с созданием директории для данных приложения: "
-              + PATH_TO_APPDATA_DIRECTORY
+              + pathToAppdataDirectory
               + e.getMessage()
               + ".\n"
               + "Будут использованы стандартные значения настроек.");
@@ -162,16 +173,16 @@ public class ConfigManager {
     // Создание файла конфигурации или чтение существующего
     String loadedProperties = null;
     try {
-      if (Files.notExists(PATH_TO_CONFIG_FILE)) {
-        Files.createFile(PATH_TO_CONFIG_FILE);
-        defaultProperties.store(new FileWriter(PATH_TO_CONFIG_FILE.toFile()), "");
+      if (Files.notExists(pathToConfigFile)) {
+        Files.createFile(pathToConfigFile);
+        defaultProperties.store(new FileWriter(pathToConfigFile.toFile()), "");
       }
-      loadedProperties = Files.readString(PATH_TO_CONFIG_FILE);
+      loadedProperties = Files.readString(pathToConfigFile);
     } catch (IOException e) {
       appProperties = makeDefaultProperties();
       printlnRed(
           "Проблемы с созданием или чтением файла конфигурации: "
-              + PATH_TO_CONFIG_FILE
+              + pathToConfigFile
               + " "
               + e.getMessage()
               + ".\n"
@@ -190,7 +201,7 @@ public class ConfigManager {
       appProperties = makeDefaultProperties();
       printlnRed(
           "Проблемы с загрузкой настроек сервиса из файла конфигурации: "
-              + PATH_TO_CONFIG_FILE
+              + pathToConfigFile
               + " "
               + e.getMessage()
               + ".\n"
@@ -198,15 +209,14 @@ public class ConfigManager {
     }
   }
 
-  private Path getAppdataDirectoryPathProperty() {
-    return PATH_TO_APPDATA_DIRECTORY;
-  }
-
   // Получение отдельных настроек
 
+  private Path getAppdataDirectoryPathProperty() {
+    return pathToAppdataDirectory;
+  }
+
   /**
-   * Метод для получения пути до файла, в котором на постоянной основе хранятся
-   * все данные сервиса.
+   * Метод для получения пути до файла, в котором на постоянной основе хранятся все данные сервиса.
    */
   public Path getFileStoragePathProperty() {
     String configKey = ConfigProperty.DEFAULT_FILE_STORAGE_PATH.key();
@@ -216,7 +226,8 @@ public class ConfigManager {
       return Path.of(configValue).toAbsolutePath();
     } catch (Exception e) {
       printlnRed(
-          "В файле конфигурации обнаружен некорректный путь до директории с файловой базой данных сервиса: "
+          "В файле конфигурации обнаружен некорректный путь до директории "
+              + "с файловой базой данных сервиса: "
               + configValue
               + ".\n"
               + "Будет установлено стандартное значение: "
@@ -226,9 +237,7 @@ public class ConfigManager {
     }
   }
 
-  /**
-   * Метод для получения TTL, который задаётся сервисом для любой новой короткой ссылки.
-   */
+  /** Метод для получения TTL, который задаётся сервисом для любой новой короткой ссылки. */
   public int getDefaultShortLinkTTLInUnitsProperty() {
     String configKey = ConfigProperty.DEFAULT_LINK_TTL_UNITS.key();
     String defaultValue = defaultProperties.getProperty(configKey);
@@ -240,7 +249,8 @@ public class ConfigManager {
           "В файле конфигурации обнаружено некорректное время действия ссылки по-умолчанию: "
               + configValue
               + ".\n"
-              + "Укажите значение в формате 24, 5, 1 и т.д. См. параметр time.unit для выбора единицы измерения TTL.\n"
+              + "Укажите значение в формате 24, 5, 1 и т.д. См. параметр time.unit для выбора "
+              + "единицы измерения TTL.\n"
               + "На время текущего запуска сервиса будет установлено стандартное значение: "
               + defaultValue);
       appProperties.setProperty(configKey, defaultValue);
@@ -248,9 +258,7 @@ public class ConfigManager {
     }
   }
 
-  /**
-   * Метод для получения TTL, который максимально может задать пользователь при изменении TTL.
-   */
+  /** Метод для получения TTL, который максимально может задать пользователь при изменении TTL. */
   public int getUserSetShortLinkMaxTTLInUnitsProperty() {
     String configKey = ConfigProperty.USER_SET_LINK_MAX_TTL_UNITS.key();
     String defaultValue = defaultProperties.getProperty(configKey);
@@ -259,10 +267,12 @@ public class ConfigManager {
       return Integer.parseInt(configValue);
     } catch (NumberFormatException e) {
       printlnRed(
-          "В файле конфигурации обнаружен некорректный лимит TTL, на который пользователь может замениться стандартное время действия ссылки: "
+          "В файле конфигурации обнаружен некорректный лимит TTL, на который пользователь может "
+              + "заменить стандартное время действия ссылки: "
               + configValue
               + ".\n"
-              + "Укажите значение в формате 24, 5, 1 и т.д. См. параметр time.unit для выбора единицы измерения TTL.\n"
+              + "Укажите значение в формате 24, 5, 1 и т.д. См. параметр time.unit для выбора "
+              + "единицы измерения TTL.\n"
               + "На время текущего запуска сервиса будет установлено стандартное значение: "
               + defaultValue);
       appProperties.setProperty(configKey, defaultValue);
@@ -270,9 +280,7 @@ public class ConfigManager {
     }
   }
 
-  /**
-   * Метод для получения текущей единицы измерения TTL коротких ссылок.
-   */
+  /** Метод для получения текущей единицы измерения TTL коротких ссылок. */
   public TimeUnit getDefaultShortLinkTTLTimeUnitProperty() {
     String configKey = ConfigProperty.DEFAULT_LINK_TTL_TIME_UNIT.key();
     String defaultValue = defaultProperties.getProperty(configKey);
@@ -281,7 +289,8 @@ public class ConfigManager {
       return TimeUnit.getTimeUnit(configValue);
     } catch (IllegalArgumentException e) {
       printlnRed(
-          "В файле конфигурации обнаружено некорректное значение единицы измерения TTL для расчётов время действия ссылки: "
+          "В файле конфигурации обнаружено некорректное значение единицы измерения TTL "
+              + "для расчётов время действия ссылки: "
               + configValue
               + ".\n"
               + "Допустимые значения параметра: часы, минуты, секунды или дни.\n"
@@ -293,8 +302,8 @@ public class ConfigManager {
   }
 
   /**
-   * Метод для получения лимита использований короткой ссылки,
-   * который задаётся сервисом для любой новой короткой ссылки.
+   * Метод для получения лимита использований короткой ссылки, который задаётся сервисом для любой
+   * новой короткой ссылки.
    */
   public int getDefaultShortLinkUsageLimitProperty() {
     String configKey = ConfigProperty.DEFAULT_LINK_USAGE_LIMIT.key();
@@ -304,7 +313,8 @@ public class ConfigManager {
       return Integer.parseInt(configValue);
     } catch (NumberFormatException e) {
       printlnRed(
-          "В файле конфигурации обнаружено некорректное количество максимальных использований ссылки: "
+          "В файле конфигурации обнаружено некорректное количество "
+              + "максимальных использований ссылки: "
               + configValue
               + ".\n"
               + "Укажите количество одним числом, например, 5, 10, 244 и т.д.\n"
@@ -316,8 +326,8 @@ public class ConfigManager {
   }
 
   /**
-   * Метод для получения лимита использований,
-   * который максимально может задать пользователь при изменении TTL.
+   * Метод для получения лимита использований, который максимально может задать пользователь при
+   * изменении TTL.
    */
   public int getUserShortLinkUsageLimitProperty() {
     String configKey = ConfigProperty.USER_LINK_USAGE_LIMIT.key();
@@ -340,8 +350,8 @@ public class ConfigManager {
   }
 
   /**
-   * Метод для получения длины ID (короткого кода после service URL) в символах,
-   * который используется сервисом при генерации ID любой новой короткой ссылки.
+   * Метод для получения длины ID (короткого кода после service URL) в символах, который
+   * используется сервисом при генерации ID любой новой короткой ссылки.
    */
   public int getDefaultShortLinkIdLengthProperty() {
     String configKey = ConfigProperty.DEFAULT_SHORT_LINK_LENGTH.key();
@@ -363,8 +373,8 @@ public class ConfigManager {
   }
 
   /**
-   * Метод для получения ограничения количества активных коротких ссылок,
-   * которые может создать один пользователь в сервисе.
+   * Метод для получения ограничения количества активных коротких ссылок, которые может создать один
+   * пользователь в сервисе.
    */
   public int getDefaultShortLinkMaxAmountPerUserProperty() {
     String configKey = ConfigProperty.DEFAULT_SHORT_LINK_MAX_AMOUNT_PER_USER.key();
@@ -374,7 +384,8 @@ public class ConfigManager {
       return Integer.parseInt(configValue);
     } catch (NumberFormatException e) {
       printlnRed(
-          "В файле конфигурации обнаружен некорректный лимит количества коротких ссылок на одного владельца: "
+          "В файле конфигурации обнаружен некорректный лимит количества "
+              + "коротких ссылок на одного владельца: "
               + configValue
               + ".\n"
               + "Укажите количество одним числом, например, 5, 10, 244 и т.д.\n"
@@ -385,9 +396,7 @@ public class ConfigManager {
     }
   }
 
-  /**
-   * Метод для получения текущего service URL, который подставляется перед ID короткой ссылки.
-   */
+  /** Метод для получения текущего service URL, который подставляется перед ID короткой ссылки. */
   public String getDefaultServiceBaseURLProperty() {
     String configKey = ConfigProperty.DEFAULT_SERVICE_BASE_URL.key();
     String defaultValue = defaultProperties.getProperty(configKey);
@@ -408,8 +417,8 @@ public class ConfigManager {
   }
 
   /**
-   * Метод для получения устаревших service URL, редирект по которым будет работать
-   * даже при смене основного домена сервиса (используется только для редиректов).
+   * Метод для получения устаревших service URL, редирект по которым будет работать даже при смене
+   * основного домена сервиса (используется только для редиректов).
    */
   public String[] getLegacyServiceBaseURLProperty() {
     String configKey = ConfigProperty.LEGACY_SERVICE_BASE_URLS.key();
@@ -422,8 +431,10 @@ public class ConfigManager {
           "В файле конфигурации задан некорректный список старых доменов сервиса: "
               + configValue
               + ".\n"
-              + "Укажите список URL со схемой http:// или https://, в формате https://ya.ru/ (со слэшем в конце). Указывайте эти URL через запятую.\n"
-              + "На время текущего запуска сервиса будет работать перенаправление только по новому домену: "
+              + "Укажите список URL со схемой http:// или https://, в формате https://ya.ru/ "
+              + "(со слэшем в конце). Указывайте эти URL через запятую.\n"
+              + "На время текущего запуска сервиса будет работать перенаправление "
+              + "только по новому домену: "
               + getDefaultServiceBaseURLProperty());
       appProperties.setProperty(configKey, defaultValue);
       return appProperties.getProperty(configKey).split(",");
@@ -431,8 +442,8 @@ public class ConfigManager {
   }
 
   /**
-   * Метод для получения перечня всех символов,
-   * которые может использовать сервис для генерации ID любой новой короткой ссылки.
+   * Метод для получения перечня всех символов, которые может использовать сервис для генерации ID
+   * любой новой короткой ссылки.
    */
   public char[] getShortLinkAllowedCharactersProperty() {
     String configKey = ConfigProperty.DEFAULT_SHORT_LINK_ALLOWED_CHARACTERS.key();
@@ -449,7 +460,8 @@ public class ConfigManager {
               + configValue
               + ".\n"
               + "Укажите список разрешённых символов одной строкой без пробелов.\n"
-              + "На время текущего запуска сервиса ID коротких ссылок будут кодироваться через base58 символы: "
+              + "На время текущего запуска сервиса ID коротких ссылок будут кодироваться "
+              + "через base58 символы: "
               + getDefaultServiceBaseURLProperty());
       appProperties.setProperty(configKey, defaultValue);
       return appProperties.getProperty(configKey).toCharArray();

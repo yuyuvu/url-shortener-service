@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class InMemoryUserRepository implements UserRepository {
 
-  Map<UUID, User> existingUsers = new ConcurrentHashMap<>();
+  private final Map<UUID, User> existingUsers = new ConcurrentHashMap<>();
 
   /** Конструктор для загрузки всех данных после перезапуска из StorageState. */
   public InMemoryUserRepository(Map<UUID, User> existingUsers) {
@@ -34,9 +34,9 @@ public class InMemoryUserRepository implements UserRepository {
   }
 
   /**
-   * Метод для получения пользователя из хранилища по UUID.
-   * Может также использоваться для проверки существования пользователя.
-   * */
+   * Метод для получения пользователя из хранилища по UUID. Может также использоваться для проверки
+   * существования пользователя.
+   */
   @Override
   public Optional<User> getUserByUUID(UUID uuid) {
     return Optional.ofNullable(existingUsers.get(uuid));
@@ -50,8 +50,8 @@ public class InMemoryUserRepository implements UserRepository {
 
   /**
    * Метод для получения всех пользователей в формате ключ-значение (UUID - объект пользователя),
-   * используется для сохранения данных во внешнее постоянное хранилище
-   * (например, базу данных или файл).
+   * используется для сохранения данных во внешнее постоянное хранилище (например, базу данных или
+   * файл).
    */
   @Override
   public Map<UUID, User> getRepositoryAsMap() {

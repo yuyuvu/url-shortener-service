@@ -22,9 +22,14 @@ import java.util.Comparator;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
+/** Реализация Presenter, которая выводит содержимое ViewModel в консоль. */
 public class ConsolePresenter implements Presenter {
-  ConfigManager configManager;
+  private final ConfigManager configManager;
 
+  /**
+   * Конструктор реализации Presenter, при помощи которой содержимое ViewModel может выводиться в
+   * консоль.
+   */
   public ConsolePresenter(ConfigManager configManager) {
     this.configManager = configManager;
   }
@@ -76,9 +81,11 @@ public class ConsolePresenter implements Presenter {
               + model.creatorUUID);
       printlnCyan("На время данной сессии вы автоматически идентифицированы под данным UUID.");
       printlnCyan(
-          "Обязательно надёжно зафиксируйте данный UUID на будущее. Для выхода используйте команду logout.");
+          "Обязательно надёжно зафиксируйте данный UUID на будущее. "
+              + "Для выхода используйте команду logout.");
       printlnCyan(
-          "При повторном подключении к сервису используйте команду (login ваш_UUID) для идентификации.");
+          "При повторном подключении к сервису используйте команду "
+              + "(login ваш_UUID) для идентификации.");
     }
   }
 

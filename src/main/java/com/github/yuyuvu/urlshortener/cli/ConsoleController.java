@@ -34,12 +34,13 @@ import java.util.UUID;
  * команды. Принимает от обработчика реализацию ViewModel и направляет её на вывод в одну из
  * реализаций интерфейса Presenter.
  */
+@SuppressWarnings({"FieldCanBeLocal", "InfiniteLoopStatement", "unused"})
 public class ConsoleController {
   /*
    * Получаем текущую системную кодировку и передаём её в InputStreamReader,
    * из которого будет читать Scanner. Это нужно для правильного считывания кириллицы из консоли.
    * */
-  private Scanner userInput =
+  private final Scanner userInput =
       new Scanner(
           new InputStreamReader(
               System.in, Charset.forName((String) System.getProperties().get("stdout.encoding"))));
@@ -61,6 +62,11 @@ public class ConsoleController {
   /** UUID текущего пользователя. Если не идентифицировался, то null. */
   private UUID currentUserUUID = null;
 
+  /**
+   * Объект, принимающий ввод от пользователя. Парсит команды и направляет на нужный обработчик
+   * команды. Принимает от обработчика реализацию ViewModel и направляет её на вывод в одну из
+   * реализаций интерфейса Presenter.
+   */
   public ConsoleController(
       UserService userService,
       LinkService linkService,
@@ -115,7 +121,8 @@ public class ConsoleController {
     presenter.sendMessage("Сервис сокращения ссылок запущен!");
     presenter.sendMessage("Для получения помощи по сервису введите help.");
     presenter.sendMessage(
-        "Без явного указания какой-либо команды сервис воспринимает ввод как короткий URL для перехода.");
+        "Без явного указания какой-либо команды сервис воспринимает ввод "
+            + "как короткий URL для перехода.");
 
     while (true) {
       String currentInput = userInput.nextLine();

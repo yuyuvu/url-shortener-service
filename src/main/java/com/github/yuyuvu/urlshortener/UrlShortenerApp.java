@@ -10,19 +10,20 @@ import com.github.yuyuvu.urlshortener.domain.repository.UserRepository;
 import com.github.yuyuvu.urlshortener.exceptions.StorageStatePersistenceException;
 import com.github.yuyuvu.urlshortener.infrastructure.config.ConfigManager;
 import com.github.yuyuvu.urlshortener.infrastructure.persistence.FileStorageService;
-import com.github.yuyuvu.urlshortener.infrastructure.persistence.StorageState;
-import com.github.yuyuvu.urlshortener.infrastructure.persistence.StorageService;
-import com.github.yuyuvu.urlshortener.infrastructure.persistence.InMemoryUserRepository;
 import com.github.yuyuvu.urlshortener.infrastructure.persistence.InMemoryNotificationRepository;
 import com.github.yuyuvu.urlshortener.infrastructure.persistence.InMemoryShortLinkRepository;
+import com.github.yuyuvu.urlshortener.infrastructure.persistence.InMemoryUserRepository;
+import com.github.yuyuvu.urlshortener.infrastructure.persistence.StorageService;
+import com.github.yuyuvu.urlshortener.infrastructure.persistence.StorageState;
 import com.github.yuyuvu.urlshortener.infrastructure.scheduler.LinkCheckStateTask;
-
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-/** Класс, собирающий все объекты приложения и передающий зависимости по цепочке дальше.
- * В конце обращается к ConsoleController для запуска цикла чтения команд или коротких URL. */
+/**
+ * Класс, собирающий все объекты приложения и передающий зависимости по цепочке дальше. В конце
+ * обращается к ConsoleController для запуска цикла чтения команд или коротких URL.
+ */
 public class UrlShortenerApp {
 
   /** Точка входа в приложение, запускается из класса Main. */
@@ -60,11 +61,18 @@ public class UrlShortenerApp {
         new ConsoleController(userService, linkService, notificationService, configManager);
 
     /*
-    * Создаём задание, которое в параллельном режиме будет проверять истечение
-    * срока действия коротких ссылок и удалять их, отправлять уведомления,
-    * если был израсходован лимит использований или срок действия ссылки истёк,
-    * а также очищать список уже прочитанных уведомлений.
-    * */
+     * Создаём задание, которое в параллельном режиме будет проверять истечение
+     * срока действия коротких ссылок и удалять их, отправлять уведомления,
+     * если был израсходован лимит использований или срок действия ссылки истёк,
+     * а также очищать список уже прочитанных уведомлений.
+     * <br>
+     * В данном случае мы гарантируем, что все ссылки с истёкшим сроком действия будут удалены,
+     * а уведомления получены не позднее, чем через 15 секунд после того, как
+     * ссылка устарела или уведомление было создано. Или через 5 секунд после перезапуска сервиса.
+     * <br>
+     * В дальнейшем данную логику можно разделить на отдельные потоки
+     * с разными задержками при необходимости.
+     * */
     ScheduledExecutorService scheduledExecutorService =
         Executors.newSingleThreadScheduledExecutor();
     scheduledExecutorService.scheduleWithFixedDelay(
@@ -89,6 +97,7 @@ public class UrlShortenerApp {
                     // Обработка критической проблемы сохранения данных при выключении сервиса
                     System.err.println(e.getMessage());
                   }
+                  // Выключение ScheduledExecutorService
                   scheduledExecutorService.shutdown();
                 }));
 

@@ -12,7 +12,7 @@ import java.util.UUID;
  */
 public class InMemoryNotificationRepository implements NotificationRepository {
 
-  List<Notification> unreadNotifications = new ArrayList<>();
+  private final List<Notification> unreadNotifications = new ArrayList<>();
 
   /** Конструктор для загрузки всех данных после перезапуска из StorageState. */
   public InMemoryNotificationRepository(List<Notification> unreadNotifications) {

@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class InMemoryShortLinkRepository implements ShortLinkRepository {
 
-  ConcurrentHashMap<String, ShortLink> existingShortLinks = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, ShortLink> existingShortLinks = new ConcurrentHashMap<>();
 
   /** Конструктор для загрузки всех данных после перезапуска из StorageState. */
   public InMemoryShortLinkRepository(Map<String, ShortLink> existingShortLinks) {
@@ -35,19 +35,19 @@ public class InMemoryShortLinkRepository implements ShortLinkRepository {
   }
 
   /**
-   * Метод для получения короткой ссылки из хранилища по shortID (код ссылки без URL сервиса).
-   * Может также использоваться для проверки существования короткой ссылки.
-   * */
+   * Метод для получения короткой ссылки из хранилища по shortID (код ссылки без URL сервиса). Может
+   * также использоваться для проверки существования короткой ссылки.
+   */
   @Override
   public Optional<ShortLink> getShortLinkByShortID(String shortId) {
     return Optional.ofNullable(existingShortLinks.get(shortId));
   }
 
   /**
-   * Метод для получения всех коротких ссылок, принадлежащих некоторому UUID.
-   * Несмотря на необходимость перебора всего хранилища, позволяет избежать
-   * дублирования данных о ссылках, которыми владеет пользователь, в его объекте.
-   * */
+   * Метод для получения всех коротких ссылок, принадлежащих некоторому UUID. Несмотря на
+   * необходимость перебора всего хранилища, позволяет избежать дублирования данных о ссылках,
+   * которыми владеет пользователь, в его объекте.
+   */
   @Override
   public List<ShortLink> getShortLinksByOwnerUUID(UUID uuid) {
     return existingShortLinks.values().stream()
@@ -63,8 +63,8 @@ public class InMemoryShortLinkRepository implements ShortLinkRepository {
 
   /**
    * Метод для получения всех коротких ссылок в формате ключ-значение (shortID - объект ссылки),
-   * используется для сохранения данных во внешнее постоянное хранилище
-   * (например, базу данных или файл).
+   * используется для сохранения данных во внешнее постоянное хранилище (например, базу данных или
+   * файл).
    */
   @Override
   public Map<String, ShortLink> getRepositoryAsMap() {

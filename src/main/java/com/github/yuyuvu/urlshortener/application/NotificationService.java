@@ -11,7 +11,7 @@ import java.util.UUID;
  * удаления.
  */
 public class NotificationService {
-  NotificationRepository notificationRepository;
+  private final NotificationRepository notificationRepository;
 
   /** Сервис зависит от NotificationRepository. */
   public NotificationService(NotificationRepository notificationRepository) {
@@ -59,6 +59,7 @@ public class NotificationService {
   }
 
   /** Метод для удаления прочитанных уведомлений. */
+  @SuppressWarnings("UnusedReturnValue")
   public boolean deleteNotification(Notification notification) {
     return notificationRepository.deleteNotification(notification);
   }

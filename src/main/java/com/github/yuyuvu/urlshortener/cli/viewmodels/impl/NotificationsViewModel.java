@@ -5,13 +5,17 @@ import com.github.yuyuvu.urlshortener.domain.model.Notification;
 import java.util.List;
 
 /**
- * Реализация ViewModel, содержащая нужные данные для визуального представления
- * результата обращения к сервису за уведомлениями, сформированными в сервисе для
- * некоторого пользователя
+ * Реализация ViewModel, содержащая нужные данные для визуального представления результата обращения
+ * к сервису за уведомлениями, сформированными в сервисе для некоторого пользователя.
  */
 public class NotificationsViewModel implements ViewModel {
-  public List<Notification> notifications;
+  public final List<Notification> notifications;
 
+  /**
+   * Конструктор реализации ViewModel, содержащей нужные данные для визуального представления
+   * результата обращения к сервису за уведомлениями, сформированными в сервисе для некоторого
+   * пользователя.
+   */
   public NotificationsViewModel(List<Notification> notifications) {
     this.notifications = notifications;
   }

@@ -10,7 +10,7 @@ import java.util.UUID;
  * проверки существования.
  */
 public class UserService {
-  UserRepository userRepository;
+  private final UserRepository userRepository;
 
   /** Сервис зависит от UserRepository. */
   public UserService(UserRepository userRepository) {
@@ -32,6 +32,7 @@ public class UserService {
   }
 
   /** Метод для сохранения нового пользователя в репозиторий. */
+  @SuppressWarnings("UnusedReturnValue")
   public User saveNewUser(User user) {
     return userRepository.saveUser(user);
   }

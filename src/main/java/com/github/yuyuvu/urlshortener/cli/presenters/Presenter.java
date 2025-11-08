@@ -4,7 +4,7 @@ import com.github.yuyuvu.urlshortener.cli.viewmodels.ViewModel;
 
 /**
  * Интерфейс Presenter представляет объекты, которые могут выводить содержимое ViewModel куда-либо
- * (в консоль, лог, файл, отправлять в другой сервис и т.д.)
+ * (в консоль, лог, файл, отправлять в другой сервис и т.д.).
  */
 public interface Presenter {
 

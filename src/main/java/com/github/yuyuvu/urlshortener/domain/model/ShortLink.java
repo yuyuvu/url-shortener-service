@@ -8,19 +8,61 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.UUID;
 
+/**
+ * Основной класс, с которым работает приложение. Объект ShortLink представляет собой созданную
+ * короткую ссылку со всем контекстом, в котором она создана, и со всеми данными о том, до какого
+ * момента она должна быть активной. <br>
+ * В объекте ShortLink хранятся: UUID создателя-владельца ссылки, строка с URL, на который короткая
+ * ссылка ведёт, короткий ID из символов, идентифицирующий данную короткую ссылку в сервисе
+ * (показывается после URL сервиса), дата и время создания короткой ссылки, дата и время окончания
+ * срока действия короткой ссылки (по истечении него она будет удалена), счётчик использований,
+ * максимальное количество использований короткой ссылки и флаг, свидетельствующий о том, что
+ * уведомление об израсходовании лимита уже было создано. <br>
+ * Также содержит методы для проверки израсходования лимита использований ссылки, истечения её срока
+ * действия, наличия уже созданных уведомлений по ней и увеличения счётчика использования.
+ */
 public class ShortLink {
+  /** UUID создателя-владельца ссылки. */
   private final UUID ownerOfShortURL;
 
+  /** Строка с URL, на который короткая ссылка ведёт. */
   private String originalURLAddress;
-  private String shortId;
 
+  /**
+   * Короткий ID из символов, идентифицирующий данную короткую ссылку в сервисе (показывается после
+   * URL сервиса).
+   */
+  private final String shortId;
+
+  /** Дата и время создания короткой ссылки. */
   private final LocalDateTime creationDateTime;
+
+  /**
+   * Дата и время окончания срока действия короткой ссылки (по истечении него она будет удалена).
+   */
   private LocalDateTime expirationDateTime;
 
+  /** Счётчик использований короткой ссылки. */
   private int usageCounter;
+
+  /** Максимальное количество использований короткой ссылки. */
   private int usageLimitAmount;
+
+  /** Флаг, свидетельствующий о том, что уведомление об израсходовании лимита уже было создано. */
   private boolean isLimitNotified;
 
+  /**
+   * Данный конструктор используется единожды при создании короткой ссылки через команду shorten.
+   * <br>
+   * Объект ShortLink представляет собой созданную короткую ссылку со всем контекстом, в котором она
+   * создана, и со всеми данными о том, до какого момента она должна быть активной. <br>
+   * В объекте ShortLink хранятся: UUID создателя-владельца ссылки, строка с URL, на который
+   * короткая ссылка ведёт, короткий ID из символов, идентифицирующий данную короткую ссылку в
+   * сервисе (показывается после URL сервиса), дата и время создания короткой ссылки, дата и время
+   * окончания срока действия короткой ссылки (по истечении него она будет удалена), счётчик
+   * использований, максимальное количество использований короткой ссылки и флаг, свидетельствующий
+   * о том, что уведомление об израсходовании лимита уже было создано.
+   */
   @JsonCreator
   public ShortLink(
       @JsonProperty("originalURLAddress") String originalURLAddress,
@@ -41,22 +83,36 @@ public class ShortLink {
     this.isLimitNotified = isLimitNotified;
   }
 
+  /** Метод для проверки того, что срок действия ссылки истёк. Проверяется из LinkCheckStateTask. */
   public boolean isExpired() {
     return this.expirationDateTime.isBefore(LocalDateTime.now());
   }
 
+  /** Метод для проверки того, что лимит использований ссылки был израсходован. */
   public boolean isLimitReached() {
     return usageCounter >= usageLimitAmount;
   }
 
+  /**
+   * Метод для проверки того, что уведомление об израсходовании лимита использований уже было
+   * создано.
+   */
   public boolean isLimitNotified() {
     return isLimitNotified;
   }
 
+  /**
+   * Метод для установки отметки о том, что уведомление об израсходовании лимита использований было
+   * создано и больше его создавать не надо.
+   */
   public void setLimitNotified(boolean isLimitNotified) {
     this.isLimitNotified = isLimitNotified;
   }
 
+  /**
+   * Метод для увеличения счётчика использований короткой ссылки. Бросает
+   * UsagesLimitReachedException при израсходованном лимите. Используется при редиректах.
+   */
   public void incrementUsageCounter() throws UsagesLimitReachedException {
     if (isLimitReached()) {
       throw new UsagesLimitReachedException(
@@ -71,14 +127,12 @@ public class ShortLink {
     usageCounter++;
   }
 
-  // Геттеры и сеттеры
+  /*
+   * Геттеры и сеттеры
+   * */
 
   public String getShortId() {
     return shortId;
-  }
-
-  public void setShortId(String shortId) {
-    this.shortId = shortId;
   }
 
   public String getOriginalURLAddress() {

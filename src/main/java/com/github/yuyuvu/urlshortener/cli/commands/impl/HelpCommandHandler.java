@@ -6,15 +6,27 @@ import com.github.yuyuvu.urlshortener.cli.viewmodels.impl.ErrorViewModel;
 import com.github.yuyuvu.urlshortener.cli.viewmodels.impl.SuccessViewModel;
 import java.util.UUID;
 
+/**
+ * Обработчик команды help, отвечающей за вывод помощи по всему сервису или только по одной
+ * отдельной команде.
+ */
 public class HelpCommandHandler implements CommandHandler {
 
+  /**
+   * Метод handle принимает аргументы для команды и UUID пользователя, который её вызвал, и выводит
+   * помощь по сервису.
+   */
   @Override
   public ViewModel handle(String[] commandArgs, UUID currentUserUUID) {
+    // Проверка передачи требуемого количества аргументов, иначе отправка сообщения с помощью по
+    // команде
     if (commandArgs.length > 1) {
       return new ErrorViewModel(
-          "Правильное использование команды: help [опционально_имя_команды_сервиса]."
+          "Правильное использование команды: help или help [и_опционально_имя_команды_сервиса]."
               + "\nВы указали избыточное количество аргументов.");
     }
+
+    // Проверка запроса помощи по одной конкретной команде
     if (commandArgs.length == 1) {
       String commandName = commandArgs[0].toLowerCase();
       switch (commandName) {
@@ -51,6 +63,7 @@ public class HelpCommandHandler implements CommandHandler {
         }
       }
     } else {
+      // Иначе вывод помощи по всему сервису
       return new SuccessViewModel(
           """
           Помощь по сервису сокращения ссылок:
