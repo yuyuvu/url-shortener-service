@@ -3,6 +3,10 @@ package com.github.yuyuvu.urlshortener.cli.viewmodels.impl;
 import com.github.yuyuvu.urlshortener.cli.viewmodels.ViewModel;
 import java.util.UUID;
 
+/**
+ * Реализация ViewModel, содержащая нужные данные для визуального представления результата
+ * успешного создания новой короткой ссылки
+ */
 public class CreatedLinkViewModel implements ViewModel {
   public final UUID creatorUUID;
   public final String shortURL;

@@ -4,7 +4,16 @@ import com.github.yuyuvu.urlshortener.application.LinkService;
 import com.github.yuyuvu.urlshortener.application.NotificationService;
 import com.github.yuyuvu.urlshortener.application.UserService;
 import com.github.yuyuvu.urlshortener.cli.commands.CommandHandler;
-import com.github.yuyuvu.urlshortener.cli.commands.impl.*;
+import com.github.yuyuvu.urlshortener.cli.commands.impl.DeleteCommandHandler;
+import com.github.yuyuvu.urlshortener.cli.commands.impl.ExitCommandHandler;
+import com.github.yuyuvu.urlshortener.cli.commands.impl.HelpCommandHandler;
+import com.github.yuyuvu.urlshortener.cli.commands.impl.ListCommandHandler;
+import com.github.yuyuvu.urlshortener.cli.commands.impl.LoginCommandHandler;
+import com.github.yuyuvu.urlshortener.cli.commands.impl.LogoutCommandHandler;
+import com.github.yuyuvu.urlshortener.cli.commands.impl.ManageCommandHandler;
+import com.github.yuyuvu.urlshortener.cli.commands.impl.RedirectCommandHandler;
+import com.github.yuyuvu.urlshortener.cli.commands.impl.ShortenCommandHandler;
+import com.github.yuyuvu.urlshortener.cli.commands.impl.StatsCommandHandler;
 import com.github.yuyuvu.urlshortener.cli.presenters.Presenter;
 import com.github.yuyuvu.urlshortener.cli.presenters.impl.ConsolePresenter;
 import com.github.yuyuvu.urlshortener.cli.viewmodels.ViewModel;
@@ -13,7 +22,12 @@ import com.github.yuyuvu.urlshortener.domain.model.Notification;
 import com.github.yuyuvu.urlshortener.infrastructure.config.ConfigManager;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.UUID;
 
 /**
  * Класс, который принимает ввод от пользователя. Парсит команды и направляет на нужный обработчик
@@ -21,21 +35,27 @@ import java.util.*;
  * реализаций интерфейса Presenter.
  */
 public class ConsoleController {
-  /* Получаем текущую системную кодировку и передаём её в InputStreamReader,
-   * из которого будет читать Scanner. Это нужно для правильного считывания кириллицы из консоли */
+  /*
+   * Получаем текущую системную кодировку и передаём её в InputStreamReader,
+   * из которого будет читать Scanner. Это нужно для правильного считывания кириллицы из консоли.
+   * */
   private Scanner userInput =
       new Scanner(
           new InputStreamReader(
               System.in, Charset.forName((String) System.getProperties().get("stdout.encoding"))));
 
+  /** Хэш-таблица со всеми названиями команд и их обработчиками. */
   private final Map<String, CommandHandler> appCommands = new HashMap<>();
+
+  /** Стандартный обработчик, выполняемый, если команда не была распознана. */
   private final CommandHandler defaultHandler;
 
   private final UserService userService;
   private final LinkService linkService;
   private final NotificationService notificationService;
-
   private final ConfigManager configManager;
+
+  /** Объект, который будет отвечать за вывод полученных результатов выполнения команд. */
   private final Presenter presenter;
 
   /** UUID текущего пользователя. Если не идентифицировался, то null. */
@@ -50,9 +70,14 @@ public class ConsoleController {
     this.linkService = linkService;
     this.notificationService = notificationService;
     this.configManager = configManager;
+    // Создаём стандартный обработчик для редиректов по коротким URL и объект Presenter
     this.presenter = new ConsolePresenter(configManager);
     this.defaultHandler = new RedirectCommandHandler(linkService);
 
+    /*
+     * Регистрируем названия команд и их обработчики, передаём зависимости и коллбэки.
+     * Для регистрации новой команды достаточно добавить одну строчку здесь.
+     * */
     registerCommand("login", new LoginCommandHandler(userService, this::loginUser));
     registerCommand("logout", new LogoutCommandHandler(this::logoutUser));
     registerCommand(
@@ -84,7 +109,7 @@ public class ConsoleController {
     this.currentUserUUID = null;
   }
 
-  /** Основной цикл обработки ввода. */
+  /** Метод для запуска основного цикла обработки ввода. */
   public void startListening() {
     presenter.sendMessage("Проект выполнил Мордашев Юрий Вячеславович.");
     presenter.sendMessage("Сервис сокращения ссылок запущен!");
@@ -100,10 +125,15 @@ public class ConsoleController {
 
   /** Метод для парсинга команд из ввода и перенаправления на обработчик команды. */
   private void route(String input) {
+    /*
+     * Делим ввод на отдельные слова, где первое слово - название команды,
+     * а остальные слова - аргументы или подкоманды.
+     * */
     String[] commandParts = input.strip().split("\\s+");
     String commandName = commandParts[0];
     String[] commandArgs = Arrays.copyOfRange(commandParts, 1, commandParts.length);
 
+    // Распознаём команду
     CommandHandler commandHandler = appCommands.get(commandName.toLowerCase());
     ViewModel result;
 
@@ -113,6 +143,7 @@ public class ConsoleController {
       result = commandHandler.handle(commandArgs, this.currentUserUUID);
     }
 
+    // Направляем результат выполнения на вывод в Presenter'е
     if (result != null) {
       presenter.present(result);
     }
@@ -125,6 +156,8 @@ public class ConsoleController {
    * пользователь сразу или в течение нескольких секунд увидит все непрочитанные уведомления.
    */
   public void sendUnreadNotifications() {
+    // Выводим уведомления только если пользователь в сети, иначе ждём
+    // После прочтения помечаем уведомления как прочтённые
     if (currentUserUUID != null) {
       List<Notification> unreadNotifications =
           notificationService.getUnreadNotificationsByUUID(currentUserUUID);

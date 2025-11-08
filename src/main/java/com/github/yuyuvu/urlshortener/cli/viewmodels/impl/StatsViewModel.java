@@ -4,6 +4,11 @@ import com.github.yuyuvu.urlshortener.cli.viewmodels.ViewModel;
 import com.github.yuyuvu.urlshortener.domain.model.ShortLink;
 import java.util.List;
 
+/**
+ * Реализация ViewModel, содержащая нужные данные для визуального представления
+ * результата обращения к сервису для получения статистики использования всех или отдельных
+ * ссылок некоторого пользователя
+ */
 public class StatsViewModel implements ViewModel {
   public List<ShortLink> shortLinks;
   public boolean isSingle;

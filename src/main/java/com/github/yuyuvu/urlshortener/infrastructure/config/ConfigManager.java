@@ -52,6 +52,10 @@ public class ConfigManager {
     }
   }
 
+  /**
+   * Перечисление возможных единиц измерения времени, через которые может задаваться TTL
+   *  для коротких ссылок.
+   */
   public enum TimeUnit {
     HOURS("часы"),
     MINUTES("минуты"),
@@ -68,6 +72,8 @@ public class ConfigManager {
       return key;
     }
 
+    // Получение константы по строковому ключу,
+    // выбрасывание ошибки в случае некорректного ключа
     static TimeUnit getTimeUnit(String value) {
       for (TimeUnit timeUnit : TimeUnit.values()) {
         if (timeUnit.key.equals(value)) return timeUnit;
@@ -76,6 +82,10 @@ public class ConfigManager {
     }
   }
 
+  /**
+   * Метод задаёт стандартные настройки приложения, которые используются если файла настроек нет
+   * или в нём заданы не все настройки (в таком случае отсюда берутся незаданные).
+   */
   private Properties makeDefaultProperties() {
     Properties defaultProperties = new Properties();
     // Значения по умолчанию, которые записываются в файл конфигурации в первый раз
@@ -131,6 +141,10 @@ public class ConfigManager {
     return defaultProperties;
   }
 
+  /**
+   * Конструктор загружает настройки из файла конфигурации, отсутствующие
+   * в файле настройки задаёт по умолчанию.
+   * */
   public ConfigManager() {
     // Создание директории для файлов данных сервиса
     try {
@@ -184,10 +198,16 @@ public class ConfigManager {
     }
   }
 
-  public Path getAppdataDirectoryPathProperty() {
+  private Path getAppdataDirectoryPathProperty() {
     return PATH_TO_APPDATA_DIRECTORY;
   }
 
+  // Получение отдельных настроек
+
+  /**
+   * Метод для получения пути до файла, в котором на постоянной основе хранятся
+   * все данные сервиса.
+   */
   public Path getFileStoragePathProperty() {
     String configKey = ConfigProperty.DEFAULT_FILE_STORAGE_PATH.key();
     String defaultValue = defaultProperties.getProperty(configKey);
@@ -206,6 +226,9 @@ public class ConfigManager {
     }
   }
 
+  /**
+   * Метод для получения TTL, который задаётся сервисом для любой новой короткой ссылки.
+   */
   public int getDefaultShortLinkTTLInUnitsProperty() {
     String configKey = ConfigProperty.DEFAULT_LINK_TTL_UNITS.key();
     String defaultValue = defaultProperties.getProperty(configKey);
@@ -225,6 +248,9 @@ public class ConfigManager {
     }
   }
 
+  /**
+   * Метод для получения TTL, который максимально может задать пользователь при изменении TTL.
+   */
   public int getUserSetShortLinkMaxTTLInUnitsProperty() {
     String configKey = ConfigProperty.USER_SET_LINK_MAX_TTL_UNITS.key();
     String defaultValue = defaultProperties.getProperty(configKey);
@@ -244,6 +270,9 @@ public class ConfigManager {
     }
   }
 
+  /**
+   * Метод для получения текущей единицы измерения TTL коротких ссылок.
+   */
   public TimeUnit getDefaultShortLinkTTLTimeUnitProperty() {
     String configKey = ConfigProperty.DEFAULT_LINK_TTL_TIME_UNIT.key();
     String defaultValue = defaultProperties.getProperty(configKey);
@@ -263,6 +292,10 @@ public class ConfigManager {
     }
   }
 
+  /**
+   * Метод для получения лимита использований короткой ссылки,
+   * который задаётся сервисом для любой новой короткой ссылки.
+   */
   public int getDefaultShortLinkUsageLimitProperty() {
     String configKey = ConfigProperty.DEFAULT_LINK_USAGE_LIMIT.key();
     String defaultValue = defaultProperties.getProperty(configKey);
@@ -282,6 +315,10 @@ public class ConfigManager {
     }
   }
 
+  /**
+   * Метод для получения лимита использований,
+   * который максимально может задать пользователь при изменении TTL.
+   */
   public int getUserShortLinkUsageLimitProperty() {
     String configKey = ConfigProperty.USER_LINK_USAGE_LIMIT.key();
     String defaultValue = defaultProperties.getProperty(configKey);
@@ -302,6 +339,10 @@ public class ConfigManager {
     }
   }
 
+  /**
+   * Метод для получения длины ID (короткого кода после service URL) в символах,
+   * который используется сервисом при генерации ID любой новой короткой ссылки.
+   */
   public int getDefaultShortLinkIdLengthProperty() {
     String configKey = ConfigProperty.DEFAULT_SHORT_LINK_LENGTH.key();
     String defaultValue = defaultProperties.getProperty(configKey);
@@ -321,6 +362,10 @@ public class ConfigManager {
     }
   }
 
+  /**
+   * Метод для получения ограничения количества активных коротких ссылок,
+   * которые может создать один пользователь в сервисе.
+   */
   public int getDefaultShortLinkMaxAmountPerUserProperty() {
     String configKey = ConfigProperty.DEFAULT_SHORT_LINK_MAX_AMOUNT_PER_USER.key();
     String defaultValue = defaultProperties.getProperty(configKey);
@@ -340,6 +385,9 @@ public class ConfigManager {
     }
   }
 
+  /**
+   * Метод для получения текущего service URL, который подставляется перед ID короткой ссылки.
+   */
   public String getDefaultServiceBaseURLProperty() {
     String configKey = ConfigProperty.DEFAULT_SERVICE_BASE_URL.key();
     String defaultValue = defaultProperties.getProperty(configKey);
@@ -359,6 +407,10 @@ public class ConfigManager {
     }
   }
 
+  /**
+   * Метод для получения устаревших service URL, редирект по которым будет работать
+   * даже при смене основного домена сервиса (используется только для редиректов).
+   */
   public String[] getLegacyServiceBaseURLProperty() {
     String configKey = ConfigProperty.LEGACY_SERVICE_BASE_URLS.key();
     String defaultValue = defaultProperties.getProperty(configKey);
@@ -378,6 +430,10 @@ public class ConfigManager {
     }
   }
 
+  /**
+   * Метод для получения перечня всех символов,
+   * которые может использовать сервис для генерации ID любой новой короткой ссылки.
+   */
   public char[] getShortLinkAllowedCharactersProperty() {
     String configKey = ConfigProperty.DEFAULT_SHORT_LINK_ALLOWED_CHARACTERS.key();
     String defaultValue = defaultProperties.getProperty(configKey);

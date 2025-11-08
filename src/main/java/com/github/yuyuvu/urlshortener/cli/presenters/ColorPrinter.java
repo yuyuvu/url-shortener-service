@@ -1,6 +1,6 @@
 package com.github.yuyuvu.urlshortener.cli.presenters;
 
-/** Класс ColorPrinter содержит методы для окрашивания текста, выводимого в консоль. */
+/** Утилитарный класс ColorPrinter содержит методы для окрашивания текста, выводимого в консоль. */
 public class ColorPrinter {
   private static final String RESET = "\033[0m"; // Text Reset
 

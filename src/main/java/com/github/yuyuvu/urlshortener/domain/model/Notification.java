@@ -2,21 +2,40 @@ package com.github.yuyuvu.urlshortener.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.UUID;
 
+/**
+ * Уведомление содержит в себе короткую ссылку, с событием по которой связано уведомление,
+ * получателя уведомления и тип уведомления (истечение срока действия
+ * или израсходование лимита использований ссылки).
+ */
 public class Notification {
+  /** Короткая ссылка, с событием по которой связано уведомление. */
   private final ShortLink shortLink;
+
+  /** Получатель уведомления. */
   private final UUID userUUID;
+
+  /**
+   * Тип уведомления (истечение срока действия
+   * или израсходование лимита использований ссылки).
+   */
   private final NotificationType type;
 
+  /** Флаг, отражающий статус прочтения уведомления получателем. */
   private boolean isRead;
 
+  /** Тип уведомления (истечение срока действия или израсходование лимита использований ссылки). */
   public enum NotificationType {
     EXPIRED,
     LIMIT_REACHED
   }
 
+  /**
+   * Объект уведомления содержит в себе короткую ссылку, с событием по которой связано уведомление,
+   * получателя уведомления и тип уведомления (истечение срока действия
+   * или израсходование лимита использований ссылки).
+   */
   @JsonCreator
   public Notification(
       @JsonProperty("shortLink") ShortLink shortLink,
@@ -28,6 +47,8 @@ public class Notification {
     this.type = type;
     this.isRead = isRead;
   }
+
+  // Геттеры и сеттеры
 
   public ShortLink getShortLink() {
     return shortLink;

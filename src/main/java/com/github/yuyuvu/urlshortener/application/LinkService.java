@@ -2,7 +2,12 @@ package com.github.yuyuvu.urlshortener.application;
 
 import com.github.yuyuvu.urlshortener.domain.model.ShortLink;
 import com.github.yuyuvu.urlshortener.domain.repository.ShortLinkRepository;
-import com.github.yuyuvu.urlshortener.exceptions.*;
+import com.github.yuyuvu.urlshortener.exceptions.IllegalCommandParameterException;
+import com.github.yuyuvu.urlshortener.exceptions.InvalidOriginalLinkException;
+import com.github.yuyuvu.urlshortener.exceptions.InvalidShortLinkException;
+import com.github.yuyuvu.urlshortener.exceptions.NotEnoughPermissionsException;
+import com.github.yuyuvu.urlshortener.exceptions.OriginalLinkNotFoundException;
+import com.github.yuyuvu.urlshortener.exceptions.UsagesLimitReachedException;
 import com.github.yuyuvu.urlshortener.infrastructure.config.ConfigManager;
 import java.awt.Desktop;
 import java.io.IOException;
@@ -24,6 +29,7 @@ public class LinkService {
   ShortLinkRepository shortLinkRepository;
   ConfigManager configManager;
 
+  /** Сервис зависит от NotificationRepository и ConfigManager. */
   public LinkService(ShortLinkRepository shortLinkRepository, ConfigManager configManager) {
     this.shortLinkRepository = shortLinkRepository;
     this.configManager = configManager;
@@ -59,9 +65,12 @@ public class LinkService {
    */
   public void validateURLFormat(String originalURL) throws InvalidOriginalLinkException {
     // Наиболее корректная валидация на URL встроенными методами Java
-    // Можно было также заменить на проверку через Regex по более новому RFC 3987, но это кажется
-    // лишним усложнением
+    // Можно было также заменить на проверку через Regex по более новому RFC 3987, например,
+    // используя regex из класса android.util.Patterns из Android API, но это кажется лишним
+    // усложнением
+    // в данном случае
     try {
+      // Следующие два вызова выбросят Exception, если переданное значение не является URI и URL
       URI uri = new URI(originalURL);
       uri.toURL();
     } catch (URISyntaxException | IllegalArgumentException | MalformedURLException e) {
@@ -80,11 +89,14 @@ public class LinkService {
   public ShortLink validateShortLinkExistence(String shortLinkFullURL)
       throws OriginalLinkNotFoundException, InvalidShortLinkException {
     shortLinkFullURL = shortLinkFullURL.strip();
-    if (checkShortLinkDoesNotContainServiceBaseURL(shortLinkFullURL)) {
+    // Проверка на то, что короткая ссылка начинается с serviceBaseURL
+    if (checkShortLinkDoesNotStartWithServiceBaseURL(shortLinkFullURL)) {
       throw new InvalidShortLinkException(
-          "Переданная короткая ссылка не была создана в данном сервисе сокращения ссылок.");
+          "Переданная ссылка не была создана в данном сервисе сокращения ссылок "
+              + "(переданное значение не распознаётся как короткая ссылка сервиса).");
     }
 
+    // Проверка на то, что короткая ссылка существует, активна и ведёт на какой-то длинный URL
     SplitShortURL splitShortURL = splitShortLinkAndServiceBaseURL(shortLinkFullURL);
     Optional<ShortLink> originalUrl =
         shortLinkRepository.getShortLinkByShortID(splitShortURL.shortID);
@@ -102,14 +114,16 @@ public class LinkService {
    * Метод проверяет, что короткий URL НЕ начинается с одного из распознаваемых нами URL нашего
    * сервиса.
    */
-  public boolean checkShortLinkDoesNotContainServiceBaseURL(String shortLinkFullURL) {
+  public boolean checkShortLinkDoesNotStartWithServiceBaseURL(String shortLinkFullURL) {
     String activeServiceURL = configManager.getDefaultServiceBaseURLProperty();
     String[] legacyServiceURLs = configManager.getLegacyServiceBaseURLProperty();
 
+    // Начало с текущего serviceBaseURL
     if (shortLinkFullURL.startsWith(activeServiceURL)) {
       return false;
     }
 
+    // Начало с одного из старых serviceBaseURL нашего сервиса (полезно при переезде на новый домен)
     if (legacyServiceURLs.length != 1 && !legacyServiceURLs[0].isEmpty()) {
       for (String legacyServiceURL : legacyServiceURLs) {
         if (shortLinkFullURL.startsWith(legacyServiceURL)) {
@@ -126,12 +140,14 @@ public class LinkService {
 
   /**
    * Метод делит полный адрес короткого URL на URL сервиса сокращения ссылок и на ID самого
-   * короткого URL.
+   * короткого URL. Перед использованием метода нужно провести проверку из метода
+   * checkShortLinkDoesNotStartWithServiceBaseURL.
    */
   private SplitShortURL splitShortLinkAndServiceBaseURL(String shortLinkFullURL) {
     String activeServiceURL = configManager.getDefaultServiceBaseURLProperty();
     String[] legacyServiceURLs = configManager.getLegacyServiceBaseURLProperty();
 
+    // Случай legacy service base URL
     if (!legacyServiceURLs[0].isEmpty() || legacyServiceURLs.length > 1) {
       for (String legacyServiceURL : legacyServiceURLs) {
         if (shortLinkFullURL.startsWith(legacyServiceURL)) {
@@ -141,6 +157,7 @@ public class LinkService {
       }
     }
 
+    // Случай active service base URL
     String shortLinkId = shortLinkFullURL.substring(activeServiceURL.length());
     return new SplitShortURL(activeServiceURL, shortLinkId);
   }
@@ -150,28 +167,35 @@ public class LinkService {
    * */
 
   /**
-   * Метод makeNewShortLink создаёт новый объект ShortLink. Все значения берутся из конфигурации.
+   * Метод makeNewShortLink создаёт новый объект ShortLink. Все значения берутся из конфигурации:
+   * единица измерения TTL, стандартное значение TTL, стандартное значение лимита использований.
    * Внутренний короткий ID ссылки генерируется в generateShortLinkID.
    */
   public ShortLink makeNewShortLink(String originalURL, UUID ownerOfShortLink)
       throws InvalidOriginalLinkException {
     try {
+      // Проверяем, что оригинальная ссылка действительно является URL
       validateURLFormat(originalURL);
+
+      // Получаем дату создания ссылки
       LocalDateTime creationDateTime = LocalDateTime.now();
 
+      // Получаем единицу измерения TTL и стандартный TTL
       ConfigManager.TimeUnit defaultTTLTimeUnit =
           configManager.getDefaultShortLinkTTLTimeUnitProperty();
       int ttlLimitInTimeUnits = configManager.getDefaultShortLinkTTLInUnitsProperty();
 
       LocalDateTime expirationDateTime;
 
+      // Добавляем к дате создания ссылки стандартное значение TTL
       switch (defaultTTLTimeUnit) {
-        case DAYS -> expirationDateTime = LocalDateTime.now().plusDays(ttlLimitInTimeUnits);
-        case MINUTES -> expirationDateTime = LocalDateTime.now().plusMinutes(ttlLimitInTimeUnits);
-        case SECONDS -> expirationDateTime = LocalDateTime.now().plusSeconds(ttlLimitInTimeUnits);
-        default -> expirationDateTime = LocalDateTime.now().plusHours(ttlLimitInTimeUnits);
+        case DAYS -> expirationDateTime = creationDateTime.plusDays(ttlLimitInTimeUnits);
+        case MINUTES -> expirationDateTime = creationDateTime.plusMinutes(ttlLimitInTimeUnits);
+        case SECONDS -> expirationDateTime = creationDateTime.plusSeconds(ttlLimitInTimeUnits);
+        default -> expirationDateTime = creationDateTime.plusHours(ttlLimitInTimeUnits);
       }
 
+      // Создаём новый объект короткой ссылки
       return new ShortLink(
           originalURL,
           generateShortLinkID(),
@@ -196,19 +220,23 @@ public class LinkService {
    * ShortLinkRepository построен таким образом, что по одному коду в нём может храниться только
    * одна любая ссылка, соответственно, обеспечивается глобальная уникальность коротких ссылок.
    * Никакие короткие коды URL не могут быть сгенерированы повторно, пока они ещё есть в качестве
-   * ключа в ShortLinkRepository. Таким образом, какая-либо короткая ссылка не может вести ни на
-   * один и тот же сайт, ни на разные сайты. Так как мы используем реализацию ShortLinkRepository на
-   * основе HashMap (InMemoryShortLinkRepository), поиск по shortID будет очень быстрым.
+   * ключа в ShortLinkRepository. Таким образом, какая-либо короткая ссылка вне зависимости от
+   * владельца не может вести ни на один и тот же сайт, ни на разные сайты. Это нужно, чтобы другие
+   * пользователи могли создавать и использовать (!) ссылки друг друга без коллизий. Так как мы
+   * используем реализацию ShortLinkRepository на основе HashMap (InMemoryShortLinkRepository),
+   * поиск по shortID будет очень быстрым.
    */
   public String generateShortLinkID() {
     Random random = new Random();
-    // Получаем массив разрешённых символов для генерации из конфига
+
+    // Получаем массив разрешённых символов для генерации ID из конфига
     final char[] allowedCharacters = configManager.getShortLinkAllowedCharactersProperty();
+
     // Получаем разрешённую длину короткого кода ссылки для генерации из конфига
     final int shortIdLength = configManager.getDefaultShortLinkIdLengthProperty();
-
     char[] shortIdGeneratedChars = new char[shortIdLength];
-    // В цикле проверяем, что сгенерированный код не является имеющимся ключом и не отвечает
+
+    // В цикле проверяем, что сгенерированный код не является имеющимся ключом и ещё не отвечает
     // за какую-либо ссылку в ShortLinkRepository
     while (true) {
       // Генерируем shortID
@@ -216,6 +244,7 @@ public class LinkService {
         int randomCharIndex = random.nextInt(allowedCharacters.length);
         shortIdGeneratedChars[i] = allowedCharacters[randomCharIndex];
       }
+
       // Проверяем наличие такого shortID в ShortLinkRepository, если есть - генерируем снова
       String shortIdString = new String(shortIdGeneratedChars);
       if (shortLinkRepository.getShortLinkByShortID(shortIdString).isPresent()) {
@@ -236,11 +265,13 @@ public class LinkService {
           InvalidOriginalLinkException,
           UsagesLimitReachedException {
     shortLinkFullURL = shortLinkFullURL.strip();
-    if (checkShortLinkDoesNotContainServiceBaseURL(shortLinkFullURL)) {
+    // Проверка, что переданное значение - это возможная короткая ссылка нашего сервиса
+    if (checkShortLinkDoesNotStartWithServiceBaseURL(shortLinkFullURL)) {
       throw new InvalidShortLinkException(
           "Переданный URL не был распознан в качестве короткой ссылки данного сервиса сокращения ссылок.");
     }
 
+    // Проверка на то, что короткая ссылка существует, активна и ведёт на какой-то длинный URL
     SplitShortURL splitShortURL = splitShortLinkAndServiceBaseURL(shortLinkFullURL);
     Optional<ShortLink> shortLinkData =
         shortLinkRepository.getShortLinkByShortID(splitShortURL.shortID);
@@ -251,9 +282,15 @@ public class LinkService {
               + " не ведёт ни на какую длинную ссылку. Данной короткой ссылки не существует, или её срок жизни истёк.");
     } else {
       try {
+        // На всякий случай дополнительно перепроверяем логику создания коротких ссылок для
+        // выявления
+        // транзитивных ошибок
         String originalURLAddress = shortLinkData.get().getOriginalURLAddress();
         validateURLFormat(originalURLAddress);
 
+        // Увеличиваем счётчик использования коротких ссылок и переходим по оригинальному URL
+        // (метод счётчика выбрасывает исключение, если лимит использований уже израсходован,
+        // поэтому он должен стоять перед фактическим редиректом)
         shortLinkData.get().incrementUsageCounter();
         Desktop.getDesktop().browse(new URI(originalURLAddress));
 
@@ -278,27 +315,41 @@ public class LinkService {
           InvalidShortLinkException,
           NotEnoughPermissionsException,
           IllegalCommandParameterException {
+    // Проверяем, что пользователь собирается управлять активной короткой ссылкой
     ShortLink shortLinkToManage = validateShortLinkExistence(shortLinkFullURL);
+
+    // Получаем из конфига максимальный лимит, который может выставить пользователь
     int userMaxManualSetLinkUsagesLimitAmount = configManager.getUserShortLinkUsageLimitProperty();
 
+    // Проверяем, что пользователь собирается управлять своей короткой ссылкой, а не чужой
     if (isUUIDOwnerOfShortLink(shortLinkToManage, userUUID)) {
+
+      // Запрещаем отрицательный или нулевой лимит
       if (newUsageLimit <= 0) {
         throw new IllegalCommandParameterException(
             "Нельзя задать нулевой " + "или отрицательный лимит использований ссылки.");
       }
+
+      // Запрещаем слишком большой лимит
       if (newUsageLimit <= userMaxManualSetLinkUsagesLimitAmount) {
-        // TODO: решить, оставить ли текущее поведение следующих двух блоков!!!
+
+        // Запрещаем менять лимит по ссылке с уже израсходованным лимитом для обеспечения надёжной
+        // блокировки ссылки без обходов
         if (shortLinkToManage.isLimitReached()) {
           throw new IllegalCommandParameterException(
               "Нельзя менять лимит использований ссылки, если лимит уже был израсходован. "
                   + "Ссылка будет удалена в скором времени либо можете удалить её вручную.");
         }
-        if (shortLinkToManage.getUsageCounter() <= newUsageLimit) {
+
+        // Запрещаем странное поведение пользователя, приводящее к моментальной автоблокировке
+        // ссылки
+        if (shortLinkToManage.getUsageCounter() >= newUsageLimit) {
           throw new IllegalCommandParameterException(
-              "Нельзя установить новый лимит использований ссылки в значение меньшее "
+              "Нельзя установить новый лимит использований ссылки в значение, меньшее "
                   + "или равное текущему количеству фактических использований ссылки. "
                   + "Используйте команду удаления ссылок.");
         }
+
         shortLinkToManage.setUsageLimitAmount(newUsageLimit);
         return shortLinkToManage;
       } else {
@@ -324,13 +375,18 @@ public class LinkService {
           NotEnoughPermissionsException,
           IllegalCommandParameterException,
           InvalidOriginalLinkException {
+    // Проверяем, что пользователь собирается управлять активной короткой ссылкой
     ShortLink shortLinkToManage = validateShortLinkExistence(shortLinkFullURL);
 
+    // Проверяем, что пользователь собирается управлять своей короткой ссылкой, а не чужой
     if (isUUIDOwnerOfShortLink(shortLinkToManage, userUUID)) {
+
+      // Проверяем, что имеющийся URL собираются заменять на валидный URL
       if (originalURL.isBlank()) {
         throw new IllegalCommandParameterException("Нельзя заменить имеющийся URL на пустой.");
       }
       validateURLFormat(originalURL);
+
       shortLinkToManage.setOriginalURLAddress(originalURL);
       return shortLinkToManage;
     } else {
@@ -348,28 +404,46 @@ public class LinkService {
           InvalidShortLinkException,
           NotEnoughPermissionsException,
           IllegalCommandParameterException {
+    // Проверяем, что пользователь собирается управлять активной короткой ссылкой
     ShortLink shortLinkToManage = validateShortLinkExistence(shortLinkFullURL);
+
+    // Получаем из конфига максимальный TTL, который может выставить пользователь
     int userSetShortLinkMaxTTLInUnits = configManager.getUserSetShortLinkMaxTTLInUnitsProperty();
 
+    // Проверяем, что пользователь собирается управлять своей короткой ссылкой, а не чужой
     if (isUUIDOwnerOfShortLink(shortLinkToManage, userUUID)) {
+
+      // Запрещаем отрицательный или нулевой TTL
       if (userSetShortLinkMaxTTLInUnits <= 0) {
         throw new IllegalCommandParameterException(
             "Нельзя использовать отрицательное или нулевое значение для единиц измерения времени при установке нового TTL.");
       }
+
+      // Запрещаем задавать слишком большой TTL
       if (addTTLInUnitsToCreationTime <= userSetShortLinkMaxTTLInUnits) {
+
+        // Выясняем единицу измерения TTL
         ConfigManager.TimeUnit defaultTTLTimeUnit =
             configManager.getDefaultShortLinkTTLTimeUnitProperty();
         LocalDateTime newExpirationDateTime;
+
+        // Получаем новый срок действия ссылки
         switch (defaultTTLTimeUnit) {
           case DAYS ->
-              newExpirationDateTime = shortLinkToManage.getCreationDateTime().plusDays(addTTLInUnitsToCreationTime);
+              newExpirationDateTime =
+                  shortLinkToManage.getCreationDateTime().plusDays(addTTLInUnitsToCreationTime);
           case MINUTES ->
-              newExpirationDateTime = shortLinkToManage.getCreationDateTime().plusMinutes(addTTLInUnitsToCreationTime);
+              newExpirationDateTime =
+                  shortLinkToManage.getCreationDateTime().plusMinutes(addTTLInUnitsToCreationTime);
           case SECONDS ->
-              newExpirationDateTime = shortLinkToManage.getCreationDateTime().plusSeconds(addTTLInUnitsToCreationTime);
+              newExpirationDateTime =
+                  shortLinkToManage.getCreationDateTime().plusSeconds(addTTLInUnitsToCreationTime);
           default ->
-              newExpirationDateTime = shortLinkToManage.getCreationDateTime().plusHours(addTTLInUnitsToCreationTime);
+              newExpirationDateTime =
+                  shortLinkToManage.getCreationDateTime().plusHours(addTTLInUnitsToCreationTime);
         }
+
+        // Запрещаем странное поведение пользователя, приводящее к моментальному автоудалению ссылки
         if (newExpirationDateTime.isBefore(LocalDateTime.now())) {
           throw new IllegalCommandParameterException(
               "Нельзя задать новый TTL для ссылки, при котором новый срок истечения действия ссылки уже будет истёкшим."
@@ -377,6 +451,7 @@ public class LinkService {
                   + "\nОриентируйтесь на дату создания, указанную в команде list."
                   + "\nДля удаления ссылки используйте команду delete url_вашей_короткой_ссылки.");
         }
+
         shortLinkToManage.setExpirationDateTime(newExpirationDateTime);
         return newExpirationDateTime;
       } else {
@@ -385,7 +460,8 @@ public class LinkService {
                     "Максимальное отдаление от даты создания (в единицах измерения времени: %s), ",
                     configManager.getDefaultShortLinkTTLTimeUnitProperty().key())
                 + "которое может задавать пользователь равно: "
-                + userSetShortLinkMaxTTLInUnits + "."
+                + userSetShortLinkMaxTTLInUnits
+                + "."
                 + "\nВыберите меньшее отдаление от даты создания в единицах измерения времени.");
       }
     } else {
@@ -398,8 +474,10 @@ public class LinkService {
       throws OriginalLinkNotFoundException,
           InvalidShortLinkException,
           NotEnoughPermissionsException {
+    // Проверяем, что пользователь собирается управлять активной короткой ссылкой
     ShortLink shortLinkToManage = validateShortLinkExistence(shortLinkFullURL);
 
+    // Проверяем, что пользователь собирается управлять своей короткой ссылкой, а не чужой
     if (isUUIDOwnerOfShortLink(shortLinkToManage, userUUID)) {
       return shortLinkRepository.deleteShortLink(shortLinkToManage.getShortId());
     } else {
@@ -407,12 +485,17 @@ public class LinkService {
     }
   }
 
-  /** Метод для получения списка созданных коротких ссылок пользователя. */
+  /**
+   * Метод для получения списка созданных коротких ссылок пользователя. Например, для команд list и
+   * stats.
+   */
   public List<ShortLink> listShortLinksByUUID(UUID userUUID) {
     return shortLinkRepository.getShortLinksByOwnerUUID(userUUID);
   }
 
-  // Методы, используемые только во внутренней логике работы сервиса
+  /*
+   * Методы, используемые только во внутренней логике работы сервиса
+   * */
 
   /**
    * Метод для удаления созданной короткой ссылкой по ID во внутренней логике приложения.
@@ -422,7 +505,10 @@ public class LinkService {
     return shortLinkRepository.deleteShortLink(shortLinkId);
   }
 
-  /** Метод для получения списка всех коротких ссылок из репозитория. */
+  /**
+   * Метод для получения списка всех коротких ссылок из репозитория. Используется для автопроверок
+   * на израсходование лимита использования или на окончание срока действия ссылки.
+   */
   public List<ShortLink> listAllShortLinks() {
     return shortLinkRepository.getAllShortLinks();
   }

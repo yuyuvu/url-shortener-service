@@ -71,6 +71,8 @@ public class ShortLink {
     usageCounter++;
   }
 
+  // Геттеры и сеттеры
+
   public String getShortId() {
     return shortId;
   }

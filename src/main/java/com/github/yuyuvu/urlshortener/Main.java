@@ -1,5 +1,7 @@
 package com.github.yuyuvu.urlshortener;
 
+import com.github.yuyuvu.urlshortener.exceptions.StorageStatePersistenceException;
+
 import java.util.Locale;
 
 /** Класс Main отвечает только за запуск приложения. Делает точку входа видимой сразу. */
@@ -11,7 +13,11 @@ public class Main {
   }
 
   /** Метод main отвечает только за запуск приложения. Делает точку входа видимой сразу. */
-  public static void main(String[] args) {
-    new UrlShortenerApp().start();
+  public static void main(String[] args){
+    try {
+      new UrlShortenerApp().start();
+    } catch (StorageStatePersistenceException e) {
+      System.err.println(e.getMessage());
+    }
   }
 }
