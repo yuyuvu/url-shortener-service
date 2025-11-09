@@ -181,17 +181,17 @@ public class ConsolePresenter implements Presenter {
       ShortLink shortLink = notification.getShortLink();
       if (notification.getType() == Notification.NotificationType.LIMIT_REACHED) {
         printlnCyan(
-            "Лимит использований вашей короткой ссылки "
+            "- Лимит использований вашей короткой ссылки "
                 + serviceBaseURL
                 + shortLink.getShortId()
                 + " на URL "
                 + shortLink.getOriginalURLAddress()
-                + " был израсходован.\nДанной короткой ссылкой воспользовались "
+                + " был израсходован.\n  Данной короткой ссылкой воспользовались "
                 + shortLink.getUsageCounter()
                 + " раз "
                 + "(при лимите в "
                 + shortLink.getUsageLimitAmount()
-                + " использований). \nСсылка будет удалена в "
+                + " использований). \n  Ссылка будет удалена в "
                 + shortLink
                     .getExpirationDateTime()
                     .format(
@@ -201,7 +201,7 @@ public class ConsolePresenter implements Presenter {
       }
       if (notification.getType() == Notification.NotificationType.EXPIRED) {
         printlnCyan(
-            "Срок действия вашей короткой ссылки "
+            "- Срок действия вашей короткой ссылки "
                 + serviceBaseURL
                 + shortLink.getShortId()
                 + " на URL "
@@ -212,9 +212,9 @@ public class ConsolePresenter implements Presenter {
                     .format(
                         DateTimeFormatter.ofPattern("E dd.MM.uuuu HH:mm")
                             .withLocale(Locale.forLanguageTag("ru-RU")))
-                + ".\nДанной короткой ссылкой воспользовались "
+                + ".\n  Данной короткой ссылкой воспользовались "
                 + shortLink.getUsageCounter()
-                + " раз. \nСсылка была удалена из базы данных сервиса.\n");
+                + " раз. \n  Ссылка была удалена из базы данных сервиса.\n");
       }
     }
   }

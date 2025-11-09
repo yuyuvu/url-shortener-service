@@ -57,6 +57,9 @@ public class HelpCommandHandler implements CommandHandler {
         case "logout" -> {
           return new SuccessViewModel("Команда logout");
         }
+        case "config" -> {
+          return new SuccessViewModel("Команда config");
+        }
         default -> {
           return new ErrorViewModel(
               "Запрошенная команда " + commandName + " не поддерживается сервисом.");

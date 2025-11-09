@@ -5,8 +5,11 @@ import static com.github.yuyuvu.urlshortener.cli.presenters.ColorPrinter.println
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.Properties;
 
 /**
@@ -33,7 +36,7 @@ public class ConfigManager {
     USER_SET_LINK_MAX_TTL_UNITS("user.set.link.max.ttl.units"),
     DEFAULT_LINK_TTL_TIME_UNIT("default.link.ttl.time.unit"),
     DEFAULT_LINK_USAGE_LIMIT("default.link.usage.limit"),
-    USER_LINK_USAGE_LIMIT("user.link.usage.limit"),
+    USER_SET_LINK_USAGE_LIMIT("user.set.link.usage.limit"),
     DEFAULT_SHORT_LINK_LENGTH("default.short.link.length"),
     DEFAULT_SHORT_LINK_ALLOWED_CHARACTERS("default.short.link.allowed.characters"),
     DEFAULT_SHORT_LINK_MAX_AMOUNT_PER_USER("default.short.link.amount.per.user"),
@@ -101,13 +104,13 @@ public class ConfigManager {
     defaultProperties.setProperty(ConfigProperty.USER_SET_LINK_MAX_TTL_UNITS.key(), "72");
 
     // Единица времени для установки TTL
-    defaultProperties.setProperty(ConfigProperty.DEFAULT_LINK_TTL_TIME_UNIT.key(), "секунды");
+    defaultProperties.setProperty(ConfigProperty.DEFAULT_LINK_TTL_TIME_UNIT.key(), "часы");
 
     // Максимум использований одной короткой ссылки - 10
     defaultProperties.setProperty(ConfigProperty.DEFAULT_LINK_USAGE_LIMIT.key(), "10");
 
     // Максимум использований одной короткой ссылки, устанавливаемый пользователем - 50
-    defaultProperties.setProperty(ConfigProperty.USER_LINK_USAGE_LIMIT.key(), "50");
+    defaultProperties.setProperty(ConfigProperty.USER_SET_LINK_USAGE_LIMIT.key(), "50");
 
     // Длина короткой ссылки - 6 символов
     defaultProperties.setProperty(ConfigProperty.DEFAULT_SHORT_LINK_LENGTH.key(), "6");
@@ -117,7 +120,7 @@ public class ConfigManager {
         ConfigProperty.DEFAULT_SHORT_LINK_ALLOWED_CHARACTERS.key(),
         "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz");
 
-    // Максимальное количество коротких ссылок на одного пользователя
+    // Максимальное количество действующих коротких ссылок на одного пользователя
     defaultProperties.setProperty(
         ConfigProperty.DEFAULT_SHORT_LINK_MAX_AMOUNT_PER_USER.key(), "100");
 
@@ -156,7 +159,7 @@ public class ConfigManager {
    * Метод перезагружает настройки из файла конфигурации, отсутствующие в файле настройки задаёт по
    * умолчанию.
    */
-  private void reloadConfig() {
+  public void reloadConfig() {
     // Создание директории для файлов данных сервиса
     try {
       Files.createDirectories(pathToAppdataDirectory);
@@ -174,10 +177,15 @@ public class ConfigManager {
     String loadedProperties = null;
     try {
       if (Files.notExists(pathToConfigFile)) {
-        Files.createFile(pathToConfigFile);
-        defaultProperties.store(new FileWriter(pathToConfigFile.toFile()), "");
+        Files.writeString(pathToConfigFile, configFileHelp + "\n"
+                + defaultProperties.toString()
+                .replace("{", "")
+                .replace("}", "").replaceAll(", ", "\n"),
+            StandardCharsets.UTF_8,
+            StandardOpenOption.CREATE,
+            StandardOpenOption.WRITE);
       }
-      loadedProperties = Files.readString(pathToConfigFile);
+      loadedProperties = Files.readString(pathToConfigFile, StandardCharsets.UTF_8);
     } catch (IOException e) {
       appProperties = makeDefaultProperties();
       printlnRed(
@@ -208,6 +216,23 @@ public class ConfigManager {
               + "Будут использованы стандартные значения настроек.");
     }
   }
+
+  private final String configFileHelp = """
+      # Помощь по файлу настроек:
+      # "default.link.ttl.units" - время жизни короткой ссылки в единицах измерения времени
+      # "user.set.link.max.ttl.units" - максимальное время жизни ссылки, на которое пользователь может изменить стандартное значение
+      # "default.link.ttl.time.unit" - единица времени для установки TTL (стандартно часы, \
+      также возможны дни, минуты, секунды)
+      # "default.link.usage.limit" - стандартный максимум использований одной короткой ссылки, задаваемый при создании новых ссылок
+      # "user.set.link.usage.limit" - максимум использований одной короткой ссылки, который может установить пользователь
+      # "default.short.link.length" - длина короткой ссылки (символов)
+      # "default.short.link.allowed.characters" - символы, из которых может генерироваться короткая ссылка (по умолчанию base58, \
+      они не содержат символов, которые не различимы сразу: l I 0 O)
+      # "default.short.link.amount.per.user" - максимальное количество действующих коротких ссылок на одного пользователя
+      # "default.file.storage.path" - путь до файла, где хранится состояние сервиса во время выключений или перезагрузок
+      # "default.service.base.url" - текущий URL нашего сервиса сокращения ссылок, который везде используется и отображается
+      # "legacy.service.base.urls" - устаревшие URL нашего сервиса сокращения ссылок, которые мы всё ещё распознаём для редиректов
+      # Настройки задаются далее:""";
 
   // Получение отдельных настроек
 
@@ -329,8 +354,8 @@ public class ConfigManager {
    * Метод для получения лимита использований, который максимально может задать пользователь при
    * изменении TTL.
    */
-  public int getUserShortLinkUsageLimitProperty() {
-    String configKey = ConfigProperty.USER_LINK_USAGE_LIMIT.key();
+  public int getUserSetShortLinkUsageLimitProperty() {
+    String configKey = ConfigProperty.USER_SET_LINK_USAGE_LIMIT.key();
     String defaultValue = defaultProperties.getProperty(configKey);
     String configValue = appProperties.getProperty(configKey);
     try {

@@ -301,9 +301,15 @@ public class LinkService {
               + "или её срок жизни истёк.");
     } else {
       try {
+        // Проверка, что срок действия ссылки истёк, но она пока ещё не была удалена
+        if (shortLinkData.get().isExpired()) {
+          throw new InvalidShortLinkException(
+              "Срок действия данной короткой ссылки истёк. По ней больше нельзя перейти. "
+                  + "Она будет удалена в течение 15 секунд.");
+        }
+
         // На всякий случай дополнительно перепроверяем логику создания коротких ссылок для
-        // выявления
-        // транзитивных ошибок
+        // выявления транзитивных ошибок
         String originalURLAddress = shortLinkData.get().getOriginalURLAddress();
         validateURLFormat(originalURLAddress);
 
@@ -340,7 +346,8 @@ public class LinkService {
     ShortLink shortLinkToManage = validateShortLinkExistence(shortLinkFullURL);
 
     // Получаем из конфига максимальный лимит, который может выставить пользователь
-    int userMaxManualSetLinkUsagesLimitAmount = configManager.getUserShortLinkUsageLimitProperty();
+    int userMaxManualSetLinkUsagesLimitAmount =
+        configManager.getUserSetShortLinkUsageLimitProperty();
 
     // Проверяем, что пользователь собирается управлять своей короткой ссылкой, а не чужой
     if (isUUIDOwnerOfShortLink(shortLinkToManage, userUUID)) {

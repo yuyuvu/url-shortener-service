@@ -4,6 +4,7 @@ import com.github.yuyuvu.urlshortener.application.LinkService;
 import com.github.yuyuvu.urlshortener.application.NotificationService;
 import com.github.yuyuvu.urlshortener.application.UserService;
 import com.github.yuyuvu.urlshortener.cli.commands.CommandHandler;
+import com.github.yuyuvu.urlshortener.cli.commands.impl.ConfigCommandHandler;
 import com.github.yuyuvu.urlshortener.cli.commands.impl.DeleteCommandHandler;
 import com.github.yuyuvu.urlshortener.cli.commands.impl.ExitCommandHandler;
 import com.github.yuyuvu.urlshortener.cli.commands.impl.HelpCommandHandler;
@@ -95,6 +96,7 @@ public class ConsoleController {
     registerCommand("help", new HelpCommandHandler());
     registerCommand("exit", new ExitCommandHandler(presenter));
     registerCommand("delete", new DeleteCommandHandler(linkService, userService));
+    registerCommand("config", new ConfigCommandHandler(configManager));
   }
 
   /**
@@ -120,6 +122,10 @@ public class ConsoleController {
     presenter.sendMessage("Проект выполнил Мордашев Юрий Вячеславович.");
     presenter.sendMessage("Сервис сокращения ссылок запущен!");
     presenter.sendMessage("Для получения помощи по сервису введите help.");
+    presenter.sendMessage(
+        "Настройки приложения можно изменить в появившейся папке "
+            + "url_shortener_appdata, файл url_shortener_config.properties.");
+    presenter.sendMessage("Для применения новых настроек введите config reload.");
     presenter.sendMessage(
         "Без явного указания какой-либо команды сервис воспринимает ввод "
             + "как короткий URL для перехода.");
