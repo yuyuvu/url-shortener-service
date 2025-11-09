@@ -15,6 +15,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -128,7 +129,7 @@ public class LinkService {
     }
 
     // Начало с одного из старых serviceBaseURL нашего сервиса (полезно при переезде на новый домен)
-    if (legacyServiceURLs.length != 1 && !legacyServiceURLs[0].isEmpty()) {
+    if (Arrays.stream(legacyServiceURLs).noneMatch(String::isBlank)) {
       for (String legacyServiceURL : legacyServiceURLs) {
         if (shortLinkFullURL.startsWith(legacyServiceURL)) {
           return false;
@@ -152,7 +153,7 @@ public class LinkService {
     String[] legacyServiceURLs = configManager.getLegacyServiceBaseURLProperty();
 
     // Случай legacy service base URL
-    if (!legacyServiceURLs[0].isEmpty() || legacyServiceURLs.length > 1) {
+    if (Arrays.stream(legacyServiceURLs).noneMatch(String::isBlank)) {
       for (String legacyServiceURL : legacyServiceURLs) {
         if (shortLinkFullURL.startsWith(legacyServiceURL)) {
           String shortLinkId = shortLinkFullURL.substring(legacyServiceURL.length());

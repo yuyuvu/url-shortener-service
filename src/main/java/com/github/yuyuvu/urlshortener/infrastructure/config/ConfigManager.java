@@ -2,14 +2,13 @@ package com.github.yuyuvu.urlshortener.infrastructure.config;
 
 import static com.github.yuyuvu.urlshortener.cli.presenters.ColorPrinter.printlnRed;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.Properties;
 
 /**
@@ -177,10 +176,16 @@ public class ConfigManager {
     String loadedProperties = null;
     try {
       if (Files.notExists(pathToConfigFile)) {
-        Files.writeString(pathToConfigFile, configFileHelp + "\n"
-                + defaultProperties.toString()
-                .replace("{", "")
-                .replace("}", "").replaceAll(", ", "\n"),
+        Files.writeString(
+            pathToConfigFile,
+            configFileHelp
+                + "\n"
+                + (defaultProperties
+                    .toString()
+                    .replace("{", "")
+                    .replace("}", "")
+                    .replace("\\", "\\\\")
+                    .replaceAll(", ", "\n")),
             StandardCharsets.UTF_8,
             StandardOpenOption.CREATE,
             StandardOpenOption.WRITE);
@@ -215,9 +220,16 @@ public class ConfigManager {
               + ".\n"
               + "Будут использованы стандартные значения настроек.");
     }
+    checkConfigValidity();
   }
 
-  private final String configFileHelp = """
+  @SuppressWarnings({"FieldCanBeLocal", "SpellCheckingInspection"})
+  private final String configFileHelp =
+      """
+      #
+      # KODIROVKA FAYLA: UTF-8 (otkrivayte yego vo vneshnem tekstovom redaktore, a ne v IDEA, tak kak on pomechayet fayl kak ISO-8859-1).
+      # IDEA nepravilno otobrazhayet simvoly kirillitsy v faylakh .properties.
+      #
       # Помощь по файлу настроек:
       # "default.link.ttl.units" - время жизни короткой ссылки в единицах измерения времени
       # "user.set.link.max.ttl.units" - максимальное время жизни ссылки, на которое пользователь может изменить стандартное значение
@@ -268,13 +280,17 @@ public class ConfigManager {
     String defaultValue = defaultProperties.getProperty(configKey);
     String configValue = appProperties.getProperty(configKey);
     try {
+      if (Integer.parseInt(configValue) <= 0) {
+        throw new NumberFormatException();
+      }
       return Integer.parseInt(configValue);
     } catch (NumberFormatException e) {
       printlnRed(
           "В файле конфигурации обнаружено некорректное время действия ссылки по-умолчанию: "
               + configValue
               + ".\n"
-              + "Укажите значение в формате 24, 5, 1 и т.д. См. параметр time.unit для выбора "
+              + "Укажите значение одним положительным числом больше нуля "
+              + "в формате 24, 5, 1 и т.д. См. параметр time.unit для выбора "
               + "единицы измерения TTL.\n"
               + "На время текущего запуска сервиса будет установлено стандартное значение: "
               + defaultValue);
@@ -289,6 +305,9 @@ public class ConfigManager {
     String defaultValue = defaultProperties.getProperty(configKey);
     String configValue = appProperties.getProperty(configKey);
     try {
+      if (Integer.parseInt(configValue) <= 0) {
+        throw new NumberFormatException();
+      }
       return Integer.parseInt(configValue);
     } catch (NumberFormatException e) {
       printlnRed(
@@ -296,7 +315,8 @@ public class ConfigManager {
               + "заменить стандартное время действия ссылки: "
               + configValue
               + ".\n"
-              + "Укажите значение в формате 24, 5, 1 и т.д. См. параметр time.unit для выбора "
+              + "Укажите значение одним положительным числом больше нуля "
+              + "в формате 24, 5, 1 и т.д. См. параметр time.unit для выбора "
               + "единицы измерения TTL.\n"
               + "На время текущего запуска сервиса будет установлено стандартное значение: "
               + defaultValue);
@@ -335,6 +355,9 @@ public class ConfigManager {
     String defaultValue = defaultProperties.getProperty(configKey);
     String configValue = appProperties.getProperty(configKey);
     try {
+      if (Integer.parseInt(configValue) <= 0) {
+        throw new NumberFormatException();
+      }
       return Integer.parseInt(configValue);
     } catch (NumberFormatException e) {
       printlnRed(
@@ -342,7 +365,8 @@ public class ConfigManager {
               + "максимальных использований ссылки: "
               + configValue
               + ".\n"
-              + "Укажите количество одним числом, например, 5, 10, 244 и т.д.\n"
+              + "Укажите количество одним положительным числом больше нуля, "
+              + "например, 5, 10, 244 и т.д.\n"
               + "На время текущего запуска сервиса будет установлено стандартное значение: "
               + defaultValue);
       appProperties.setProperty(configKey, defaultValue);
@@ -359,6 +383,9 @@ public class ConfigManager {
     String defaultValue = defaultProperties.getProperty(configKey);
     String configValue = appProperties.getProperty(configKey);
     try {
+      if (Integer.parseInt(configValue) <= 0) {
+        throw new NumberFormatException();
+      }
       return Integer.parseInt(configValue);
     } catch (NumberFormatException e) {
       printlnRed(
@@ -366,7 +393,8 @@ public class ConfigManager {
               + " на который пользователь может поменять лимит по умолчанию: "
               + configValue
               + ".\n"
-              + "Укажите количество одним числом, например, 5, 10, 244 и т.д.\n"
+              + "Укажите количество одним положительным числом больше нуля, "
+              + "например, 5, 10, 244 и т.д.\n"
               + "На время текущего запуска сервиса будет установлено стандартное значение: "
               + defaultValue);
       appProperties.setProperty(configKey, defaultValue);
@@ -383,13 +411,17 @@ public class ConfigManager {
     String defaultValue = defaultProperties.getProperty(configKey);
     String configValue = appProperties.getProperty(configKey);
     try {
+      if (Integer.parseInt(configValue) <= 0) {
+        throw new NumberFormatException();
+      }
       return Integer.parseInt(configValue);
     } catch (NumberFormatException e) {
       printlnRed(
           "В файле конфигурации обнаружена некорректная максимальная длина ID короткой ссылки: "
               + configValue
               + ".\n"
-              + "Укажите количество одним числом, например, 5, 10, 244 и т.д.\n"
+              + "Укажите количество одним положительным числом больше нуля, "
+              + "например, 5, 10, 244 и т.д.\n"
               + "На время текущего запуска сервиса будет установлено стандартное значение: "
               + defaultValue);
       appProperties.setProperty(configKey, defaultValue);
@@ -406,6 +438,9 @@ public class ConfigManager {
     String defaultValue = defaultProperties.getProperty(configKey);
     String configValue = appProperties.getProperty(configKey);
     try {
+      if (Integer.parseInt(configValue) <= 0) {
+        throw new NumberFormatException();
+      }
       return Integer.parseInt(configValue);
     } catch (NumberFormatException e) {
       printlnRed(
@@ -413,7 +448,8 @@ public class ConfigManager {
               + "коротких ссылок на одного владельца: "
               + configValue
               + ".\n"
-              + "Укажите количество одним числом, например, 5, 10, 244 и т.д.\n"
+              + "Укажите количество одним положительным числом больше нуля, "
+              + "например, 5, 10, 244 и т.д.\n"
               + "На время текущего запуска сервиса будет установлено стандартное значение: "
               + defaultValue);
       appProperties.setProperty(configKey, defaultValue);
@@ -422,18 +458,21 @@ public class ConfigManager {
   }
 
   /** Метод для получения текущего service URL, который подставляется перед ID короткой ссылки. */
+  @SuppressWarnings("ResultOfMethodCallIgnored")
   public String getDefaultServiceBaseURLProperty() {
     String configKey = ConfigProperty.DEFAULT_SERVICE_BASE_URL.key();
     String defaultValue = defaultProperties.getProperty(configKey);
     String configValue = appProperties.getProperty(configKey);
     try {
+      new URI(configValue.strip()).toURL();
       return configValue.strip();
     } catch (Exception e) {
       printlnRed(
           "В файле конфигурации задан некорректный базовый URL сервиса сокращения ссылок: "
               + configValue
               + ".\n"
-              + "Укажите URL со схемой http:// или https://, в формате https://ya.ru/ (со слэшем в конце).\n"
+              + "Укажите URL со схемой http:// или https://, в формате https://google.com/ "
+              + "(со слэшем в конце).\n"
               + "На время текущего запуска сервиса будет установлено стандартное значение: "
               + defaultValue);
       appProperties.setProperty(configKey, defaultValue);
@@ -445,18 +484,25 @@ public class ConfigManager {
    * Метод для получения устаревших service URL, редирект по которым будет работать даже при смене
    * основного домена сервиса (используется только для редиректов).
    */
+  @SuppressWarnings("ResultOfMethodCallIgnored")
   public String[] getLegacyServiceBaseURLProperty() {
     String configKey = ConfigProperty.LEGACY_SERVICE_BASE_URLS.key();
     String defaultValue = defaultProperties.getProperty(configKey);
     String configValue = appProperties.getProperty(configKey);
     try {
-      return configValue.strip().split(",");
+      String[] legacyServiceURLs = configValue.strip().split(",");
+      if (!legacyServiceURLs[0].isBlank() || legacyServiceURLs.length > 1) {
+        for (String legacyServiceURL : legacyServiceURLs) {
+          new URI(legacyServiceURL).toURL();
+        }
+      }
+      return legacyServiceURLs;
     } catch (Exception e) {
       printlnRed(
           "В файле конфигурации задан некорректный список старых доменов сервиса: "
               + configValue
               + ".\n"
-              + "Укажите список URL со схемой http:// или https://, в формате https://ya.ru/ "
+              + "Укажите список URL со схемой http:// или https://, в формате https://google.com/ "
               + "(со слэшем в конце). Указывайте эти URL через запятую.\n"
               + "На время текущего запуска сервиса будет работать перенаправление "
               + "только по новому домену: "
@@ -491,5 +537,26 @@ public class ConfigManager {
       appProperties.setProperty(configKey, defaultValue);
       return appProperties.getProperty(configKey).toCharArray();
     }
+  }
+
+  /**
+   * Метод для проверки валидности заданных значений настроек сразу после перезагрузки настроек.
+   * Добавлен для того, чтобы ошибки были видны сразу, а не при попытке вызвать какую-либо команду
+   * или при редиректе. Приводит к разовому выводу всех ошибок. Во время вызовов всех методов
+   * ConfigManager для получения отдельных настроек неправильные значения сами исправляются на
+   * значения по умолчанию внутри них.
+   */
+  private void checkConfigValidity() {
+    getDefaultShortLinkTTLTimeUnitProperty();
+    getDefaultShortLinkTTLInUnitsProperty();
+    getUserSetShortLinkMaxTTLInUnitsProperty();
+    getDefaultShortLinkUsageLimitProperty();
+    getUserSetShortLinkUsageLimitProperty();
+    getShortLinkAllowedCharactersProperty();
+    getDefaultShortLinkIdLengthProperty();
+    getFileStoragePathProperty();
+    getDefaultServiceBaseURLProperty();
+    getLegacyServiceBaseURLProperty();
+    getDefaultShortLinkMaxAmountPerUserProperty();
   }
 }

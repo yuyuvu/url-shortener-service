@@ -23,7 +23,7 @@ public class User {
    */
   @JsonCreator
   public User(
-      @JsonProperty("uuid") UUID uuid,
+      @JsonProperty("UUID") UUID uuid,
       @JsonProperty("amountOfMadeShortLinks") int amountOfMadeShortLinks) {
     this.uuid = uuid;
     this.amountOfMadeShortLinks = amountOfMadeShortLinks;
