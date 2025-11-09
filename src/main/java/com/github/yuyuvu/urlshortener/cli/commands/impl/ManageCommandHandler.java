@@ -59,8 +59,8 @@ public class ManageCommandHandler implements CommandHandler {
                   configManager.getDefaultShortLinkTTLTimeUnitProperty().key())
               + "\nчтобы получилось новое время удаления ссылки, смотрите дату и время создания "
               + "ссылки в команде list;"
-              + "\n\nПример использования 1: manage https://yush.ru/RXXbKU set limit 2 - изменит лимит переходов на 2 для указанной ссылки."
-              + "\nПример использования 2: manage https://yush.ru/RXXbKU set ttl 50 - изменит время удаления ссылки на"
+              + "\n\nПример использования 1: manage https://yulink.tech/RXXbKU set limit 2 - изменит лимит переходов на 2 для указанной ссылки."
+              + "\nПример использования 2: manage https://yulink.tech/RXXbKU set ttl 50 - изменит время удаления ссылки на"
               + String.format(
                   "\n(время создания + 50 единиц измерения времени), единица измерения: %s.",
                   configManager.getDefaultShortLinkTTLTimeUnitProperty().key())

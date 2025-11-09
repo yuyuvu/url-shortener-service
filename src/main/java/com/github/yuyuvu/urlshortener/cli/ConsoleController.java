@@ -119,6 +119,7 @@ public class ConsoleController {
   /** Метод для запуска основного цикла обработки ввода. */
   public void startListening() {
     presenter.sendMessage("Проект выполнил Мордашев Юрий Вячеславович.");
+    presenter.sendMessage("");
     presenter.sendMessage("Сервис сокращения ссылок запущен!");
     presenter.sendMessage("Для получения помощи по сервису введите help.");
     presenter.sendMessage(
@@ -127,7 +128,7 @@ public class ConsoleController {
     presenter.sendMessage("Для применения новых настроек введите config reload.");
     presenter.sendMessage(
         "Без явного указания какой-либо команды сервис воспринимает ввод "
-            + "как короткий URL для перехода.");
+            + "как URL для сокращения или короткий URL сервиса для перехода.");
 
     while (true) {
       String currentInput = userInput.nextLine();

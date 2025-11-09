@@ -130,7 +130,7 @@ public class ConfigManager {
 
     // Текущий URL нашего сервиса сокращения ссылок
     defaultProperties.setProperty(
-        ConfigProperty.DEFAULT_SERVICE_BASE_URL.key(), "https://yush.ru/");
+        ConfigProperty.DEFAULT_SERVICE_BASE_URL.key(), "https://yulink.tech/");
 
     // Устаревшие URL нашего сервиса сокращения ссылок, которые мы ещё распознаём для редиректов
     defaultProperties.setProperty(ConfigProperty.LEGACY_SERVICE_BASE_URLS.key(), "");
