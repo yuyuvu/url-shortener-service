@@ -45,9 +45,6 @@ public class HelpCommandHandler implements CommandHandler {
         case "delete" -> {
           return new SuccessViewModel("Команда delete");
         }
-        case "shorten" -> {
-          return new SuccessViewModel("Команда shorten");
-        }
         case "exit" -> {
           return new SuccessViewModel("Команда exit");
         }

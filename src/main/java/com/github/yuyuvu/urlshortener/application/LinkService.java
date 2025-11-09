@@ -182,6 +182,12 @@ public class LinkService {
       // Проверяем, что оригинальная ссылка действительно является URL
       validateURLFormat(originalURL);
 
+      // Проверяем, что оригинальная ссылка не является другой короткой ссылкой
+      if (!checkShortLinkDoesNotStartWithServiceBaseURL(originalURL)) {
+        throw new InvalidOriginalLinkException(
+            "Нельзя создавать короткие ссылки на другие короткие ссылки сервиса.");
+      }
+
       // Получаем дату создания ссылки
       LocalDateTime creationDateTime = LocalDateTime.now();
 

@@ -79,7 +79,9 @@ public class ConsoleController {
     this.configManager = configManager;
     // Создаём стандартный обработчик для редиректов по коротким URL и объект Presenter
     this.presenter = new ConsolePresenter(configManager);
-    this.defaultHandler = new RedirectCommandHandler(linkService);
+    ShortenCommandHandler shortenCommandHandler =
+        new ShortenCommandHandler(linkService, userService, configManager, this::loginUser);
+    this.defaultHandler = new RedirectCommandHandler(linkService, shortenCommandHandler);
 
     /*
      * Регистрируем названия команд и их обработчики, передаём зависимости и коллбэки.
@@ -87,9 +89,6 @@ public class ConsoleController {
      * */
     registerCommand("login", new LoginCommandHandler(userService, this::loginUser));
     registerCommand("logout", new LogoutCommandHandler(this::logoutUser));
-    registerCommand(
-        "shorten",
-        new ShortenCommandHandler(linkService, userService, configManager, this::loginUser));
     registerCommand("list", new ListCommandHandler(linkService));
     registerCommand("stats", new StatsCommandHandler(linkService));
     registerCommand("manage", new ManageCommandHandler(linkService, configManager));
