@@ -481,6 +481,14 @@ public class LinkService {
       }
       validateURLFormat(originalURL);
 
+      // Проверяем достижение лимита, нет смысла менять параметры заблокированной ссылки
+      if (shortLinkToManage.isLimitReached()) {
+        throw new InvalidShortLinkException(
+            "Нельзя менять параметры ссылки, если лимит её использований уже был израсходован. "
+                + "Она заблокирована. "
+                + "Ссылка будет удалена в скором времени либо можете удалить её вручную.");
+      }
+
       shortLinkToManage.setOriginalURLAddress(originalURL);
       return shortLinkToManage;
     } else {
@@ -531,6 +539,21 @@ public class LinkService {
                   Срок действия ссылки должен оканчиваться в будущем относительно текущего момента.
                   Ориентируйтесь на дату создания, указанную в команде list.
                   Для удаления ссылки используйте команду delete url_вашей_короткой_ссылки.""");
+        }
+
+        // Проверяем достижение лимита, нет смысла менять параметры заблокированной ссылки
+        if (shortLinkToManage.isLimitReached()) {
+          throw new InvalidShortLinkException(
+              "Нельзя менять параметры ссылки, если лимит её использований уже был израсходован. Она заблокирована. "
+                  + "Ссылка будет удалена в скором времени либо можете удалить её вручную.");
+        }
+
+        // Проверяем истечение срока действия ссылки, не допускаем смену TTL в промежуток между
+        // устареванием и автоудалением
+        if (shortLinkToManage.isExpired()) {
+          throw new InvalidShortLinkException(
+              "Срок действия вашей короткой ссылки только что истёк. "
+                  + "Она заблокирована для изменения TTL и будет удалена в течение 30 секунд.");
         }
 
         shortLinkToManage.setExpirationDateTime(newExpirationDateTime);

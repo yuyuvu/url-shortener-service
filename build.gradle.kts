@@ -64,7 +64,7 @@ tasks.withType<JavaExec> {
 
 // указываем основной класс с main для MANIFEST.MF, а также то, что нам нужен fat-jar со всеми зависимостями
 tasks.jar {
-    archiveBaseName.set("url_shortener")
+    archiveBaseName.set("url-shortener-service")
     manifest {
         attributes["Main-Class"] = "com.github.yuyuvu.urlshortener.Main"
     }
