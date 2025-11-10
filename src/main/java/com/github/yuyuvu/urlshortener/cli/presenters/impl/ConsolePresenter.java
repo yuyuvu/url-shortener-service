@@ -136,7 +136,7 @@ public class ConsolePresenter implements Presenter {
         printlnYellow(
             "Всего фактических использований: "
                 + model.shortLinks.get(0).getUsageCounter()
-                + "/"
+                + " из "
                 + model.shortLinks.get(0).getUsageLimitAmount());
         printlnYellow(
             "Истекает в: "
