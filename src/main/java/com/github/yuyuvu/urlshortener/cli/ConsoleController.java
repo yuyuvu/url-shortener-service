@@ -92,7 +92,7 @@ public class ConsoleController {
     registerCommand("list", new ListCommandHandler(linkService));
     registerCommand("stats", new StatsCommandHandler(linkService));
     registerCommand("manage", new ManageCommandHandler(linkService, configManager));
-    registerCommand("help", new HelpCommandHandler());
+    registerCommand("help", new HelpCommandHandler(configManager));
     registerCommand("exit", new ExitCommandHandler(presenter));
     registerCommand("delete", new DeleteCommandHandler(linkService, userService));
     registerCommand("config", new ConfigCommandHandler(configManager));

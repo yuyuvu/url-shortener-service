@@ -42,7 +42,6 @@ public class LinkService {
    * магических индексов в массивах).
    */
   public static class SplitShortURL {
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final String serviceURL;
 
     private final String shortID;

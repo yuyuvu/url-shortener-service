@@ -105,8 +105,8 @@ public class ConfigManager {
     // Единица времени для установки TTL
     defaultProperties.setProperty(ConfigProperty.DEFAULT_LINK_TTL_TIME_UNIT.key(), "часы");
 
-    // Максимум использований одной короткой ссылки - 10
-    defaultProperties.setProperty(ConfigProperty.DEFAULT_LINK_USAGE_LIMIT.key(), "10");
+    // Максимум использований одной короткой ссылки - 8
+    defaultProperties.setProperty(ConfigProperty.DEFAULT_LINK_USAGE_LIMIT.key(), "8");
 
     // Максимум использований одной короткой ссылки, устанавливаемый пользователем - 50
     defaultProperties.setProperty(ConfigProperty.USER_SET_LINK_USAGE_LIMIT.key(), "50");
@@ -418,7 +418,7 @@ public class ConfigManager {
     String defaultValue = defaultProperties.getProperty(configKey);
     String configValue = appProperties.getProperty(configKey);
     try {
-      if (Integer.parseInt(configValue) <= 0) {
+      if (Integer.parseInt(configValue) < 4 || Integer.parseInt(configValue) > 20) {
         throw new NumberFormatException();
       }
       return Integer.parseInt(configValue);
@@ -427,8 +427,8 @@ public class ConfigManager {
           "В файле конфигурации обнаружена некорректная максимальная длина ID короткой ссылки: "
               + configValue
               + ".\n"
-              + "Укажите количество одним положительным числом больше нуля, "
-              + "например, 5, 10, 244 и т.д.\n"
+              + "Укажите длину одним положительным числом от 4 до 20, "
+              + "например, 5, 10, 20 и т.д.\n"
               + "На время текущего запуска сервиса будет установлено стандартное значение: "
               + defaultValue);
       appProperties.setProperty(configKey, defaultValue);

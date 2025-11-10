@@ -128,7 +128,6 @@ public class NotificationServiceTest {
       throws InvalidOriginalLinkException {
     // Создаём новую ссылку и сохраняем её в репозиторий
     UUID ownerOfShortLink = UUID.randomUUID();
-    UUID secondUser = UUID.randomUUID();
     final ShortLink[] shortLink = new ShortLink[1];
     shortLink[0] =
         linkService.saveNewShortLink(
@@ -146,6 +145,8 @@ public class NotificationServiceTest {
     List<Notification> notifications =
         notificationService.getUnreadNotificationsByUUID(ownerOfShortLink);
     Assertions.assertEquals(2, notifications.size());
+
+    UUID secondUser = UUID.randomUUID();
     // Проверяем, что для другого пользователя они же не приходят
     List<Notification> notificationsForAnotherUser =
         notificationService.getUnreadNotificationsByUUID(secondUser);

@@ -118,8 +118,7 @@ public class LinkCheckStateTaskTest {
    * Проверяем подзадачи удаления ссылок с истёкшим сроком действия, а также создания уведомлений.
    */
   @Test
-  void removeExpiredLinksAndMakeNotificationsTest()
-      throws InvalidOriginalLinkException, UsagesLimitReachedException {
+  void removeExpiredLinksAndMakeNotificationsTest() {
     // Имитируем разовый запуск scheduler (но без непосредственно отображения уведомлений,
     // допустим, что пользователь уже вышел до устаревания ссылки или израсходования лимита,
     // то есть текущий UUID равен null)
@@ -189,9 +188,9 @@ public class LinkCheckStateTaskTest {
    * уведомлений.
    */
   @Test
-  void sendNotificationsTest() throws InvalidOriginalLinkException, UsagesLimitReachedException {
+  void sendNotificationsTest() {
     // Заменяем System.out
-    PrintStream out = System.out;
+    final PrintStream out = System.out;
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     System.setOut(new PrintStream(bos));
 
@@ -260,5 +259,6 @@ public class LinkCheckStateTaskTest {
     // Проверяем содержимое ByteArrayOutputStream, должен быть снова пустым,
     // так как непрочитанных уведомлений для user1 не было
     Assertions.assertEquals("", bos.toString());
+    System.setOut(out);
   }
 }

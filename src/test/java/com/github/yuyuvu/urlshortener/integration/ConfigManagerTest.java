@@ -29,7 +29,7 @@ public class ConfigManagerTest {
     Path pathToConfigFile = testAppdata.resolve("url_shortener_test_config.properties");
 
     // Заменяем System.out
-    PrintStream out = System.out;
+    final PrintStream out = System.out;
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     System.setOut(new PrintStream(bos));
 
@@ -82,6 +82,7 @@ public class ConfigManagerTest {
     // В конце удаляем файл после теста
     Files.deleteIfExists(pathToConfigFile);
     Files.deleteIfExists(testAppdata);
+    System.setOut(out);
   }
 
   private static Properties makeIncorrectProperties() {
