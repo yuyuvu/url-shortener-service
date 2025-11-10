@@ -100,12 +100,6 @@ public class LinkService {
         throw new MalformedURLException();
       }
 
-      // Дополнительно проверяем, что внутри URL нет множества последовательных точек
-      Pattern urlHasStrangeDots = Pattern.compile("\\.{2,}");
-      if (urlHasStrangeDots.matcher(hostAfterScheme).find()) {
-        throw new MalformedURLException();
-      }
-
       // Дополнительно проверяем, что после протокола есть слеши
       // и нет дефиса в начале или конце названия домена или поддоменов
       if (originalURL.startsWith("http:")
@@ -124,6 +118,11 @@ public class LinkService {
           }
           if (schemeMid.contains("/")) {
             schemeMid = schemeMid.substring(0, schemeMid.indexOf("/"));
+          }
+          // Дополнительно проверяем, что внутри URL нет множества последовательных точек
+          Pattern urlHasStrangeDots = Pattern.compile("\\.{2,}");
+          if (urlHasStrangeDots.matcher(schemeMid).find()) {
+            throw new MalformedURLException();
           }
           for (String domain : schemeMid.split("[.]")) {
             if (domain.startsWith("-") || domain.endsWith("-")) {
