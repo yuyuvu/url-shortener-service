@@ -13,23 +13,29 @@ import java.io.IOException;
 import java.util.UUID;
 
 /**
- * Обработчик редиректа пытается перенаправить пользователя по URL, на который ведёт указанная им
- * короткая ссылка.
+ * Обработчик редиректа пытается перенаправить пользователя по URL, на который ведёт короткая
+ * ссылка. Если передан не URL сервиса, то пытается создать новую короткую ссылку через
+ * ShortenCommandHandler.
  */
 public class RedirectCommandHandler implements CommandHandler {
   private final LinkService linkService;
+  private final ShortenCommandHandler shortenCommandHandler;
 
   /**
    * Конструктор обработчика редиректа, перенаправляющего пользователя по URL, на который ведёт
-   * указанная им короткая ссылка.
+   * короткая ссылка. Если передан не URL сервиса, то обработчик пытается создать новую короткую
+   * ссылку через ShortenCommandHandler.
    */
-  public RedirectCommandHandler(LinkService linkService) {
+  public RedirectCommandHandler(
+      LinkService linkService, ShortenCommandHandler shortenCommandHandler) {
     this.linkService = linkService;
+    this.shortenCommandHandler = shortenCommandHandler;
   }
 
   /**
-   * Метод handle принимает короткий URL для команды и UUID пользователя, вызвавшего её, и пытается
-   * перенаправить пользователя по URL, на который ведёт короткая ссылка.
+   * Метод handle принимает URL для редиректа или сокращения и UUID пользователя, сделавшего запрос,
+   * и пытается перенаправить пользователя по URL, на который ведёт короткая ссылка. Если передан не
+   * URL сервиса, то пытается создать новую короткую ссылку через ShortenCommandHandler.
    */
   @Override
   public ViewModel handle(String[] commandArgs, UUID currentUserUUID) {
@@ -38,24 +44,31 @@ public class RedirectCommandHandler implements CommandHandler {
     // случайные символы через пробел без порядка
     if (commandArgs.length != 1 || shortLinkURL.isBlank()) {
       return new ErrorViewModel(
-          "Вы не ввели команду или URL для сокращения. Предоставленный ввод не распознан. "
+          "Вы не ввели команду или URL для сокращения или перехода. "
+              + "Предоставленный ввод не распознан. "
               + "Введите help для помощи по сервису.");
     } else {
       try {
-        // Проверяем, что в запросе есть какой-то URL.
+        // Проверяем, что в запросе есть какой-то URL (передано значение с корректными схемами URL,
+        // и оно соответствует правилам стандарта RFC2396)
         linkService.validateURLFormat(shortLinkURL);
       } catch (InvalidOriginalLinkException e) {
         return new ErrorViewModel(
             """
-            Предоставленный ввод не распознан в качестве команды или URL.
+            Предоставленный ввод не распознан в качестве команды или возможного URL для сокращения.
             Введите help для получения помощи по сервису.
             Если вы желаете ввести URL для сокращения, \
-            то указывайте его вместе с протоколом (http://, https://).""");
+            то указывайте его вместе с протоколом (http://, https://).
+            Хост должен быть непустым и содержать название доменной зоны. Вместо этого также можно указать ip с протоколом.""");
       }
       try {
-        // Проверяем, что запрошена статистика по активной короткой ссылке нашего сервиса.
-        // Если всё в порядке, перенаправляем.
-        String originalURLAddress = linkService.redirectByShortLink(shortLinkURL);
+        // Проверяем, что запрошена активная короткая ссылка нашего сервиса.
+        // Если нет, то пытаемся создать новую короткую ссылку.
+        // Если же передана короткая ссылка, то пытаемся перенаправить по ней.
+        if (linkService.checkShortLinkDoesNotStartWithServiceBaseURL(shortLinkURL)) {
+          return shortenCommandHandler.handle(commandArgs, currentUserUUID);
+        }
+        String originalURLAddress = linkService.redirectByShortLink(shortLinkURL, true);
         return new SuccessViewModel("Перенаправление на " + originalURLAddress + " ...");
       } catch (OriginalLinkNotFoundException
           | IOException

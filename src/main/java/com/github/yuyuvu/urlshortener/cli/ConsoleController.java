@@ -79,7 +79,9 @@ public class ConsoleController {
     this.configManager = configManager;
     // Создаём стандартный обработчик для редиректов по коротким URL и объект Presenter
     this.presenter = new ConsolePresenter(configManager);
-    this.defaultHandler = new RedirectCommandHandler(linkService);
+    ShortenCommandHandler shortenCommandHandler =
+        new ShortenCommandHandler(linkService, userService, configManager, this::loginUser);
+    this.defaultHandler = new RedirectCommandHandler(linkService, shortenCommandHandler);
 
     /*
      * Регистрируем названия команд и их обработчики, передаём зависимости и коллбэки.
@@ -87,13 +89,10 @@ public class ConsoleController {
      * */
     registerCommand("login", new LoginCommandHandler(userService, this::loginUser));
     registerCommand("logout", new LogoutCommandHandler(this::logoutUser));
-    registerCommand(
-        "shorten",
-        new ShortenCommandHandler(linkService, userService, configManager, this::loginUser));
     registerCommand("list", new ListCommandHandler(linkService));
     registerCommand("stats", new StatsCommandHandler(linkService));
     registerCommand("manage", new ManageCommandHandler(linkService, configManager));
-    registerCommand("help", new HelpCommandHandler());
+    registerCommand("help", new HelpCommandHandler(configManager));
     registerCommand("exit", new ExitCommandHandler(presenter));
     registerCommand("delete", new DeleteCommandHandler(linkService, userService));
     registerCommand("config", new ConfigCommandHandler(configManager));
@@ -108,7 +107,7 @@ public class ConsoleController {
   }
 
   /** Коллбэк для идентификации по UUID для LoginCommandHandler. */
-  private void loginUser(UUID userUUID) {
+  public void loginUser(UUID userUUID) {
     this.currentUserUUID = userUUID;
   }
 
@@ -120,6 +119,7 @@ public class ConsoleController {
   /** Метод для запуска основного цикла обработки ввода. */
   public void startListening() {
     presenter.sendMessage("Проект выполнил Мордашев Юрий Вячеславович.");
+    presenter.sendMessage("");
     presenter.sendMessage("Сервис сокращения ссылок запущен!");
     presenter.sendMessage("Для получения помощи по сервису введите help.");
     presenter.sendMessage(
@@ -128,7 +128,7 @@ public class ConsoleController {
     presenter.sendMessage("Для применения новых настроек введите config reload.");
     presenter.sendMessage(
         "Без явного указания какой-либо команды сервис воспринимает ввод "
-            + "как короткий URL для перехода.");
+            + "как URL для сокращения или короткий URL сервиса для перехода.");
 
     while (true) {
       String currentInput = userInput.nextLine();

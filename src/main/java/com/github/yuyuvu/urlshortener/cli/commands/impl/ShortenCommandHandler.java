@@ -15,7 +15,9 @@ import java.util.function.Consumer;
 
 /**
  * Обработчик команды shorten, отвечающей за создание новой уникальной короткой ссылки в сервисе для
- * определённого длинного URL.
+ * определённого длинного URL. Возможность явного вызова shorten через написание команды в консоли
+ * была убрана с учётом того, что ссылку можно просто ввести в консоль без каких-либо команд. Сейчас
+ * вызывается из RedirectCommandHandler.
  */
 public class ShortenCommandHandler implements CommandHandler {
   private final LinkService linkService;
@@ -25,7 +27,9 @@ public class ShortenCommandHandler implements CommandHandler {
 
   /**
    * Конструктор обработчика команды shorten, отвечающего за создание новой уникальной короткой
-   * ссылки в сервисе для определённого длинного URL.
+   * ссылки в сервисе для определённого длинного URL. Возможность явного вызова shorten через
+   * написание команды в консоли была убрана с учётом того, что ссылку можно просто ввести в консоль
+   * без каких-либо команд. Сейчас handle обработчика вызывается из RedirectCommandHandler.
    */
   public ShortenCommandHandler(
       LinkService linkService,
@@ -44,9 +48,9 @@ public class ShortenCommandHandler implements CommandHandler {
    */
   @Override
   public ViewModel handle(String[] commandArgs, UUID currentUserUUID) {
-    String originalURL = commandArgs[0];
+    String originalURL = commandArgs[0].strip();
     // Проверка передачи требуемого количества аргументов, иначе отправка сообщения с помощью по
-    // команде
+    // команде. Нужна только в случае возвращения возможности явного вызова команды shorten.
     if (commandArgs.length != 1 || originalURL.isBlank()) {
       return new ErrorViewModel(
           "Правильное использование команды: shorten URL_для_сокращения "

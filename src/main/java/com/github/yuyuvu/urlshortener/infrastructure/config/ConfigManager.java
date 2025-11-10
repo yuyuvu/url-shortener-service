@@ -17,11 +17,10 @@ import java.util.Properties;
  */
 public class ConfigManager {
   /** Основная папка с данными приложения и файлом настройки, не изменяется. */
-  private final Path pathToAppdataDirectory = Path.of("url_shortener_appdata");
+  private Path pathToAppdataDirectory = Path.of("url_shortener_appdata");
 
   /** Файл настройки приложения, не изменяется. */
-  private final Path pathToConfigFile =
-      pathToAppdataDirectory.resolve("url_shortener_config.properties");
+  private Path pathToConfigFile = pathToAppdataDirectory.resolve("url_shortener_config.properties");
 
   /** Поле с загруженными настройками приложения. */
   private Properties appProperties;
@@ -30,7 +29,7 @@ public class ConfigManager {
   private final Properties defaultProperties = makeDefaultProperties();
 
   /** Перечисление возможных настроек приложения с мэппингом на ключи в файле конфигурации. */
-  enum ConfigProperty {
+  public enum ConfigProperty {
     DEFAULT_LINK_TTL_UNITS("default.link.ttl.units"),
     USER_SET_LINK_MAX_TTL_UNITS("user.set.link.max.ttl.units"),
     DEFAULT_LINK_TTL_TIME_UNIT("default.link.ttl.time.unit"),
@@ -49,6 +48,7 @@ public class ConfigManager {
       this.key = key;
     }
 
+    /** Метод для получения строкового ключа какой-либо настройки в файле. */
     public String key() {
       return key;
     }
@@ -105,8 +105,8 @@ public class ConfigManager {
     // Единица времени для установки TTL
     defaultProperties.setProperty(ConfigProperty.DEFAULT_LINK_TTL_TIME_UNIT.key(), "часы");
 
-    // Максимум использований одной короткой ссылки - 10
-    defaultProperties.setProperty(ConfigProperty.DEFAULT_LINK_USAGE_LIMIT.key(), "10");
+    // Максимум использований одной короткой ссылки - 8
+    defaultProperties.setProperty(ConfigProperty.DEFAULT_LINK_USAGE_LIMIT.key(), "8");
 
     // Максимум использований одной короткой ссылки, устанавливаемый пользователем - 50
     defaultProperties.setProperty(ConfigProperty.USER_SET_LINK_USAGE_LIMIT.key(), "50");
@@ -130,7 +130,7 @@ public class ConfigManager {
 
     // Текущий URL нашего сервиса сокращения ссылок
     defaultProperties.setProperty(
-        ConfigProperty.DEFAULT_SERVICE_BASE_URL.key(), "https://yush.ru/");
+        ConfigProperty.DEFAULT_SERVICE_BASE_URL.key(), "https://yulink.tech/");
 
     // Устаревшие URL нашего сервиса сокращения ссылок, которые мы ещё распознаём для редиректов
     defaultProperties.setProperty(ConfigProperty.LEGACY_SERVICE_BASE_URLS.key(), "");
@@ -151,6 +151,13 @@ public class ConfigManager {
    * по умолчанию. Используется для первого и единственного создания объекта ConfigManager.
    */
   public ConfigManager() {
+    reloadConfig();
+  }
+
+  /** Конструктор для тестов, позволяет поменять путь до файла настроек. */
+  public ConfigManager(Path pathToAppdataDirectory, Path pathToConfigFile) {
+    this.pathToAppdataDirectory = pathToAppdataDirectory;
+    this.pathToConfigFile = pathToConfigFile;
     reloadConfig();
   }
 
@@ -411,7 +418,7 @@ public class ConfigManager {
     String defaultValue = defaultProperties.getProperty(configKey);
     String configValue = appProperties.getProperty(configKey);
     try {
-      if (Integer.parseInt(configValue) <= 0) {
+      if (Integer.parseInt(configValue) < 4 || Integer.parseInt(configValue) > 20) {
         throw new NumberFormatException();
       }
       return Integer.parseInt(configValue);
@@ -420,8 +427,8 @@ public class ConfigManager {
           "В файле конфигурации обнаружена некорректная максимальная длина ID короткой ссылки: "
               + configValue
               + ".\n"
-              + "Укажите количество одним положительным числом больше нуля, "
-              + "например, 5, 10, 244 и т.д.\n"
+              + "Укажите длину одним положительным числом от 4 до 20, "
+              + "например, 5, 10, 20 и т.д.\n"
               + "На время текущего запуска сервиса будет установлено стандартное значение: "
               + defaultValue);
       appProperties.setProperty(configKey, defaultValue);
@@ -546,7 +553,7 @@ public class ConfigManager {
    * ConfigManager для получения отдельных настроек неправильные значения сами исправляются на
    * значения по умолчанию внутри них.
    */
-  private void checkConfigValidity() {
+  public void checkConfigValidity() {
     getDefaultShortLinkTTLTimeUnitProperty();
     getDefaultShortLinkTTLInUnitsProperty();
     getUserSetShortLinkMaxTTLInUnitsProperty();

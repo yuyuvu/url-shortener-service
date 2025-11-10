@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * LinkService отвечает за операции, совершаемые со ссылками и URL (прежде всего с объектом
@@ -40,8 +41,7 @@ public class LinkService {
    * Утилитарный класс для более наглядного разделения ссылки на её ID и service base URL (без
    * магических индексов в массивах).
    */
-  private static class SplitShortURL {
-    @SuppressWarnings({"FieldCanBeLocal", "unused"})
+  public static class SplitShortURL {
     private final String serviceURL;
 
     private final String shortID;
@@ -49,6 +49,14 @@ public class LinkService {
     SplitShortURL(String serviceURL, String shortID) {
       this.serviceURL = serviceURL;
       this.shortID = shortID;
+    }
+
+    public String getServiceURL() {
+      return serviceURL;
+    }
+
+    public String getShortID() {
+      return shortID;
     }
   }
 
@@ -58,31 +66,79 @@ public class LinkService {
 
   /** Метод для проверки, что пользователь с некоторым UUID является владельцем ссылки. */
   public boolean isUUIDOwnerOfShortLink(ShortLink shortLink, UUID userUUID) {
+    if (shortLink == null) {
+      return false;
+    }
     return shortLink.getOwnerOfShortURL().equals(userUUID);
   }
 
   /**
    * Метод validateURLFormat проверяет, что переданный длинный URL содержит корректные схемы URL
    * (http, https, ftp), а также, что URL соответствует всем синтаксическим правилам стандарта
-   * RFC2396.
+   * RFC2396 + подходит для сервиса сокращения ссылок.
    */
   @SuppressWarnings("ResultOfMethodCallIgnored")
   public void validateURLFormat(String originalURL) throws InvalidOriginalLinkException {
-    // Наиболее корректная валидация на URL встроенными методами Java
+    // Корректная валидация на URL встроенными методами Java +
+    // дополнительные проверки через свои regex, чтобы не принимать неподходящие
+    // для сервиса сокращения URL ссылки.
     // Можно было также заменить на проверку через Regex по более новому RFC 3987, например,
-    // используя regex из класса android.util.Patterns из Android API, но это кажется лишним
-    // усложнением
-    // в данном случае
+    // используя полноценный готовый длинный regex из класса android.util.Patterns.WEB_URL
+    // из Android API, но это не добавлено, чтобы отразить авторский характер решения.
+    // Поддержка mailto и ftp была оставлена (так как это тоже протоколы URL).
+    // См. тесты в validateURLFormatTest в LinkServiceTest.
     try {
       // Следующие два вызова выбросят Exception, если переданное значение не является URI и URL
       URI uri = new URI(originalURL);
       uri.toURL();
+
+      // Дополнительно проверяем, что после указания протокола хост не пустой
+      // и название доменной зоны тоже не пустое (либо указан ip)
+      Pattern urlHasContent = Pattern.compile("[^.]+\\.[^.]+");
+      String hostAfterScheme = originalURL.substring(originalURL.indexOf("//") + 2);
+      if (!urlHasContent.matcher(hostAfterScheme).find()) {
+        throw new MalformedURLException();
+      }
+
+      // Дополнительно проверяем, что внутри URL нет множества последовательных точек
+      Pattern urlHasStrangeDots = Pattern.compile("\\.{2,}");
+      if (urlHasStrangeDots.matcher(hostAfterScheme).find()) {
+        throw new MalformedURLException();
+      }
+
+      // Дополнительно проверяем, что после протокола есть слеши
+      // и нет дефиса в начале или конце названия домена или поддоменов
+      if (originalURL.startsWith("http:")
+          || originalURL.startsWith("https:")
+          || originalURL.startsWith("ftp:")) {
+        String schemeMid = originalURL.substring(originalURL.indexOf(":") + 1);
+        if (!schemeMid.startsWith("//")) {
+          throw new MalformedURLException();
+        } else {
+          schemeMid = schemeMid.substring(2);
+          if (schemeMid.contains("@")) {
+            schemeMid = schemeMid.substring(schemeMid.indexOf("@") + 1);
+          }
+          if (schemeMid.contains(":")) {
+            schemeMid = schemeMid.substring(0, schemeMid.lastIndexOf(":"));
+          }
+          if (schemeMid.contains("/")) {
+            schemeMid = schemeMid.substring(0, schemeMid.indexOf("/"));
+          }
+          for (String domain : schemeMid.split("[.]")) {
+            if (domain.startsWith("-") || domain.endsWith("-")) {
+              throw new MalformedURLException();
+            }
+          }
+        }
+      }
+
     } catch (URISyntaxException | IllegalArgumentException | MalformedURLException e) {
       throw new InvalidOriginalLinkException(
           "Переданный URL ("
               + originalURL
-              + ") представлен в некорректном формате или не является ссылкой."
-              + "\nПередайте корректный URL с указанием протокола.");
+              + ") представлен в некорректном для сервиса формате или не является ссылкой."
+              + "\nПередайте корректный URL с указанием протокола (https:// или другими), непустым именем хоста и указанием доменной зоны. Либо протокол и ip.");
     }
   }
 
@@ -148,7 +204,7 @@ public class LinkService {
    * короткого URL. Перед использованием метода нужно провести проверку из метода
    * checkShortLinkDoesNotStartWithServiceBaseURL.
    */
-  private SplitShortURL splitShortLinkAndServiceBaseURL(String shortLinkFullURL) {
+  public SplitShortURL splitShortLinkAndServiceBaseURL(String shortLinkFullURL) {
     String activeServiceURL = configManager.getDefaultServiceBaseURLProperty();
     String[] legacyServiceURLs = configManager.getLegacyServiceBaseURLProperty();
 
@@ -181,6 +237,12 @@ public class LinkService {
     try {
       // Проверяем, что оригинальная ссылка действительно является URL
       validateURLFormat(originalURL);
+
+      // Проверяем, что оригинальная ссылка не является другой короткой ссылкой
+      if (!checkShortLinkDoesNotStartWithServiceBaseURL(originalURL)) {
+        throw new InvalidOriginalLinkException(
+            "Нельзя создавать короткие ссылки на другие короткие ссылки сервиса.");
+      }
 
       // Получаем дату создания ссылки
       LocalDateTime creationDateTime = LocalDateTime.now();
@@ -276,7 +338,7 @@ public class LinkService {
    * Метод отвечает за редирект по короткому URL. Проводит валидацию введённого URL на
    * принадлежность к нашему сервису.
    */
-  public String redirectByShortLink(String shortLinkFullURL)
+  public String redirectByShortLink(String shortLinkFullURL, boolean notInvokedInTests)
       throws OriginalLinkNotFoundException,
           IOException,
           InvalidShortLinkException,
@@ -318,7 +380,9 @@ public class LinkService {
         // (метод счётчика выбрасывает исключение, если лимит использований уже израсходован,
         // поэтому он должен стоять перед фактическим редиректом)
         shortLinkData.get().incrementUsageCounter();
-        Desktop.getDesktop().browse(new URI(originalURLAddress));
+        if (notInvokedInTests) {
+          Desktop.getDesktop().browse(new URI(originalURLAddress));
+        }
 
         return originalURLAddress;
       } catch (URISyntaxException e) {
@@ -417,6 +481,14 @@ public class LinkService {
       }
       validateURLFormat(originalURL);
 
+      // Проверяем достижение лимита, нет смысла менять параметры заблокированной ссылки
+      if (shortLinkToManage.isLimitReached()) {
+        throw new InvalidShortLinkException(
+            "Нельзя менять параметры ссылки, если лимит её использований уже был израсходован. "
+                + "Она заблокирована. "
+                + "Ссылка будет удалена в скором времени либо можете удалить её вручную.");
+      }
+
       shortLinkToManage.setOriginalURLAddress(originalURL);
       return shortLinkToManage;
     } else {
@@ -444,7 +516,7 @@ public class LinkService {
     if (isUUIDOwnerOfShortLink(shortLinkToManage, userUUID)) {
 
       // Запрещаем отрицательный или нулевой TTL
-      if (userSetShortLinkMaxTTLInUnits <= 0) {
+      if (addTTLInUnitsToCreationTime <= 0) {
         throw new IllegalCommandParameterException(
             "Нельзя использовать отрицательное или нулевое значение для единиц измерения времени"
                 + " при установке нового TTL.");
@@ -469,6 +541,21 @@ public class LinkService {
                   Для удаления ссылки используйте команду delete url_вашей_короткой_ссылки.""");
         }
 
+        // Проверяем достижение лимита, нет смысла менять параметры заблокированной ссылки
+        if (shortLinkToManage.isLimitReached()) {
+          throw new InvalidShortLinkException(
+              "Нельзя менять параметры ссылки, если лимит её использований уже был израсходован. Она заблокирована. "
+                  + "Ссылка будет удалена в скором времени либо можете удалить её вручную.");
+        }
+
+        // Проверяем истечение срока действия ссылки, не допускаем смену TTL в промежуток между
+        // устареванием и автоудалением
+        if (shortLinkToManage.isExpired()) {
+          throw new InvalidShortLinkException(
+              "Срок действия вашей короткой ссылки только что истёк. "
+                  + "Она заблокирована для изменения TTL и будет удалена в течение 30 секунд.");
+        }
+
         shortLinkToManage.setExpirationDateTime(newExpirationDateTime);
         return newExpirationDateTime;
       } else {
@@ -490,7 +577,7 @@ public class LinkService {
    * Метод calculateNewExpirationDateTimeForShortLinkToChange вычисляет дату и время истечения срока
    * действия уже существующей короткой ссылки, для которой запрошено изменение TTL.
    */
-  private LocalDateTime calculateNewExpirationDateTimeForShortLinkToChange(
+  public LocalDateTime calculateNewExpirationDateTimeForShortLinkToChange(
       int addTTLInUnitsToCreationTime, ShortLink shortLinkToManage) {
     // Выясняем единицу измерения TTL
     ConfigManager.TimeUnit defaultTTLTimeUnit =
