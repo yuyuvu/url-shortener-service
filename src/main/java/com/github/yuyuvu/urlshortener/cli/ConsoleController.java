@@ -107,7 +107,7 @@ public class ConsoleController {
   }
 
   /** Коллбэк для идентификации по UUID для LoginCommandHandler. */
-  private void loginUser(UUID userUUID) {
+  public void loginUser(UUID userUUID) {
     this.currentUserUUID = userUUID;
   }
 

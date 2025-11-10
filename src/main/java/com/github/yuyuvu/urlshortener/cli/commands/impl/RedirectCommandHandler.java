@@ -55,10 +55,11 @@ public class RedirectCommandHandler implements CommandHandler {
       } catch (InvalidOriginalLinkException e) {
         return new ErrorViewModel(
             """
-            Предоставленный ввод не распознан в качестве команды или URL.
+            Предоставленный ввод не распознан в качестве команды или возможного URL для сокращения.
             Введите help для получения помощи по сервису.
             Если вы желаете ввести URL для сокращения, \
-            то указывайте его вместе с протоколом (http://, https://).""");
+            то указывайте его вместе с протоколом (http://, https://).
+            Хост должен быть непустым и содержать название доменной зоны. Вместо этого также можно указать ip с протоколом.""");
       }
       try {
         // Проверяем, что запрошена активная короткая ссылка нашего сервиса.
@@ -67,7 +68,7 @@ public class RedirectCommandHandler implements CommandHandler {
         if (linkService.checkShortLinkDoesNotStartWithServiceBaseURL(shortLinkURL)) {
           return shortenCommandHandler.handle(commandArgs, currentUserUUID);
         }
-        String originalURLAddress = linkService.redirectByShortLink(shortLinkURL);
+        String originalURLAddress = linkService.redirectByShortLink(shortLinkURL, true);
         return new SuccessViewModel("Перенаправление на " + originalURLAddress + " ...");
       } catch (OriginalLinkNotFoundException
           | IOException

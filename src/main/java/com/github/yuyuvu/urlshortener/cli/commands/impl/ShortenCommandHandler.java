@@ -48,7 +48,7 @@ public class ShortenCommandHandler implements CommandHandler {
    */
   @Override
   public ViewModel handle(String[] commandArgs, UUID currentUserUUID) {
-    String originalURL = commandArgs[0];
+    String originalURL = commandArgs[0].strip();
     // Проверка передачи требуемого количества аргументов, иначе отправка сообщения с помощью по
     // команде. Нужна только в случае возвращения возможности явного вызова команды shorten.
     if (commandArgs.length != 1 || originalURL.isBlank()) {

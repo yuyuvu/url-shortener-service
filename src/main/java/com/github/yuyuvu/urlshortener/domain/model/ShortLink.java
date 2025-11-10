@@ -34,8 +34,8 @@ public class ShortLink {
    */
   private final String shortId;
 
-  /** Дата и время создания короткой ссылки. */
-  private final LocalDateTime creationDateTime;
+  /** Дата и время создания короткой ссылки. Для тестов не финальная, но не должна изменяться. */
+  private LocalDateTime creationDateTime;
 
   /**
    * Дата и время окончания срока действия короткой ссылки (по истечении него она будет удалена).
@@ -153,6 +153,13 @@ public class ShortLink {
 
   public void setExpirationDateTime(LocalDateTime expirationDateTime) {
     this.expirationDateTime = expirationDateTime;
+  }
+
+  /** Метод для подмены даты создания ссылки в тестах и проверки логики изменения TTL. */
+  public void setCreationDateTime(LocalDateTime creationDateTime, boolean usedForTests) {
+    if (usedForTests) {
+      this.creationDateTime = creationDateTime;
+    }
   }
 
   public int getUsageLimitAmount() {
