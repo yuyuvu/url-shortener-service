@@ -132,12 +132,18 @@ public class ConsoleController {
 
     while (true) {
       String currentInput = userInput.nextLine();
-      route(currentInput);
+
+      ViewModel result;
+      result = route(currentInput);
+
+      if (result != null) {
+        presenter.present(result);
+      }
     }
   }
 
   /** Метод для парсинга команд из ввода и перенаправления на обработчик команды. */
-  private void route(String input) {
+  public ViewModel route(String input) {
     /*
      * Делим ввод на отдельные слова, где первое слово - название команды,
      * а остальные слова - аргументы или подкоманды.
@@ -148,6 +154,7 @@ public class ConsoleController {
 
     // Распознаём команду
     CommandHandler commandHandler = appCommands.get(commandName.toLowerCase());
+
     ViewModel result;
 
     if (commandHandler == null) {
@@ -156,10 +163,7 @@ public class ConsoleController {
       result = commandHandler.handle(commandArgs, this.currentUserUUID);
     }
 
-    // Направляем результат выполнения на вывод в Presenter'е
-    if (result != null) {
-      presenter.present(result);
-    }
+    return result;
   }
 
   /**
